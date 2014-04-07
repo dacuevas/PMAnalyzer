@@ -1,0 +1,388 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use File::Basename;
+
+my $usage = <<'End_of_Usage';
+
+Usage: 
+
+Options:
+
+    -p  word    -- Plate name (corresponds to the compounds in each well; required)
+    -w  list    -- Plate wells of interest. (D = all)
+    -f  list    -- Phenotype microarray data files to be analyzed. If there are 
+    			   replicate plates, please group them. e.g., if there are three 
+    			   replicates for two clones, put all three replicates per clone
+    			   together then the next set of three. (required)
+    -l  word    -- Log base 2 of optical density values (y/n) (D = n)
+    -r  word    -- number of replicates (D = 1)
+    -e  word    -- name of empty vector clone (D = EDT2231)
+    -c  list    -- Clones of interest (D = all)
+
+End_of_Usage
+
+######################################################
+# Variables
+
+my $option_hash = {
+				   'wells'         =>     ['all'],
+				   'plate'         =>     '',
+				   'replicates'    =>    '1',
+				   'empty'         =>    'EDT2231',
+				   'files'         =>     [],
+				   'clones'        =>     ['all'],
+				   'log2'          =>    'n',
+				};
+
+######################################################
+
+while (@ARGV && $ARGV[0] =~ /^-/ )
+{
+    $_ = shift;
+       if ( s/^-p// ) { $option_hash->{'plate'}                = $_ || shift }
+    elsif ( s/^-l// ) { $option_hash->{'log2'}                = $_ || shift }
+    elsif ( s/^-r// ) { $option_hash->{'replicates'}                = $_ || shift }
+    elsif ( s/^-e// ) { $option_hash->{'empty'}                = $_ || shift }
+    elsif ( s/^-c// ) { while ($ARGV[0] && $ARGV[0] =~ /^\w/) {push @{$option_hash->{'clones'}}, shift @ARGV;} }
+    elsif ( s/^-w// ) { while ($ARGV[0] && $ARGV[0] =~ /^\w/) {push @{$option_hash->{'wells'}}, shift @ARGV;} }
+    elsif ( s/^-f// ) { while ($ARGV[0] && $ARGV[0] =~ /^\w/) {push @{$option_hash->{'files'}}, shift @ARGV;} }
+    else
+    {
+        print STDERR "Bad flag '$_'\n", $usage;
+        exit;
+    }
+}
+if (! $option_hash->{'wells'} || $option_hash->{'wells'}->[0] =~ /^all$/i)
+{
+	$option_hash->{'wells'} = [];
+	foreach my $letter ('A'..'H')
+	{
+		for (my $i = 1; $i<13;$i++)
+		{
+			push @{$option_hash->{'wells'}}, $letter . $i;
+		}
+	}
+}
+if (! $option_hash->{'clones'} || $option_hash->{'clones'}->[0] =~ /^all$/i)
+{
+	$option_hash->{'clones'} = [];
+	
+}
+
+# makes sure user has input all required information
+
+unless ($option_hash->{'plate'} && $option_hash->{'files'})
+{
+	if(! $option_hash->{'plate'})
+	{
+		print STDERR "\nPlease insert a plate composition identifier (denoted by the -p flag).\n\n";
+	}
+	if(! @{$option_hash->{'files'}})
+	{
+		print STDERR "\nPlease insert the data file names (denoted by the -f flag).\n\n";
+	}
+	print STDERR $usage;
+	exit;
+}
+
+#my $compounds = outside_data($option_hash->{'plate'});
+my %compounds = read_plate($option_hash->{'plate'});
+
+my ($raw_data, @titles);
+our ($phenotypes, $timepoints);
+
+foreach my $file (@{$option_hash->{'files'}})
+{
+	my ($name, $rep); my $tmp = 0;
+	#($name = $file) =~ s/(EDT\d+)/$1/i;
+	#($name, $rep) = $file =~ /(\w+\d?)(\w)/i;
+    #my $fname = basename($file);
+    my $fname = fileparse($file, qr/\.[^.]*/);
+	if( $option_hash->{"replicates"} > 1 ) {
+		#($name, $rep) = $fname =~ /([A-Za-z0-9]+\d?)([A-Za-z0-9])/i;
+		($name, $rep) = $fname =~ /^([A-Za-z.]*\d+)_([A-Za-z0-9-]+)/i;
+	}
+	else {
+		#($name) = $fname =~ /([A-Za-z0-9]+)/i;
+		($name) = $fname =~ /([A-Za-z0-9-._]+)/i;
+		$rep = 1
+	}
+=pod
+	if ($file =~ /(\D*?\d+)(\w)/i)
+	{
+		$name = $1; print STDERR "$name\n";
+		$rep = $2; print STDERR "$rep\n";
+	}
+	else
+	{
+		print STDERR "There is something weird in the file name $file.\n" and exit;
+	}
+=cut
+	#open FH, "<$file";
+    if( ! defined $name && ! defined $rep ) {
+        print STDERR "ERROR\nname and rep variables are undefined\n";
+        print STDERR "Current file: $fname\n";
+        exit;
+    }
+    elsif( ! defined $name ) {
+        print STDERR "ERROR\nname variable is undefined\n";
+        print STDERR "Current file: $fname\n";
+        exit;
+    }
+    elsif( ! defined $rep ) {
+        print STDERR "ERROR\nrep variable is undefined\n";
+        print STDERR "Current file: $fname\n";
+        exit;
+    }
+	open FH, "<$file" or die "Couldn't open $file for reading\n";
+	while(<FH>)
+	{
+		my (@data);
+		chomp;
+		if ($_ =~ /^BACKGROUND/i)
+		{
+			last;
+		}
+		else
+		{
+			#if ($_ =~ /^\w+?\s*?\-?\s*?\w+?\.txt/i || $_ =~ /^ABS/i)
+			if ($_ =~ /\.txt/i || $_ =~ /^ABS/i)
+			{
+				next;
+			}
+			elsif ($_ =~ /^Minutes/i)
+			{
+				@titles = split /\t/, $_;
+			}
+			elsif ($_ =~ /^\d+/)
+			{
+				@data = split /\t/, $_;
+                for (my $i = 0; $i < scalar (@data); $i++)
+				{
+					if($option_hash->{'log2'} =~ /y/i)
+					{
+						push @{$raw_data->{$name}->{$rep}->{$titles[$i]}}, log($data[$i])/log(2);
+					}
+					else
+					{
+						push @{$raw_data->{$name}->{$rep}->{$titles[$i]}}, $data[$i];
+					}
+				}
+				$tmp++;
+			}
+		}
+	}
+	unless ($timepoints)
+	{
+		$timepoints = $tmp;
+	}
+}
+#die Dumper($phenotypes);
+
+
+########
+#####
+## put in some information on getting std error of the raw data for each
+## replicate vs the average of replicates
+#####
+########
+if ($option_hash->{'replicates'} > 1)
+{
+	#my @names = keys %$raw_data;
+	foreach my $name (keys %$raw_data)
+	{
+		#my @reps = splice(@names, 0, $option_hash->{'replicates'});
+		my @reps = keys %{$raw_data->{$name}};
+		#(my $clone = $reps[0]) =~ s/(\w+)\-\d/$1/;
+		#take_average($raw_data, \@titles, \@reps, $clone);
+#		take_average($raw_data, \@titles, \@reps, $name);
+		#die Dumper($raw_data);
+	}
+}
+else
+{
+	#$phenotypes = $raw_data;
+}
+=pod
+my @strains = grep {$_ !~ /$option_hash->{'empty'}/} keys %$phenotypes;
+take_average($phenotypes, \@titles, \@strains);
+=cut
+#die Dumper ($raw_data);
+
+my $report;
+push @{$report->[0]}, 'Clone';
+push @{$report->[1]}, 'Main Source';
+push @{$report->[2]}, 'Growth Media';
+push @{$report->[3]}, 'Wells';
+#my $wells = [qw(D7 D8 D9)];
+#@$wells = sort {$a cmp $b} @$wells;
+my @names = sort {$a cmp $b} keys %$raw_data;
+foreach my $well (@{$option_hash->{'wells'}})
+{
+	foreach my $name (@names)
+	{
+		foreach my $rep (sort {$a cmp $b} keys %{$raw_data->{$name}})
+		{
+			unless ($rep eq 'Average' || $rep eq 'StdDev')
+			{
+				push @{$report->[0]}, "$name";
+				push @{$report->[1]}, "$compounds{$well}[0]"; # Growth source (Carbon, Nitrogen, etc.)
+				#push @{$report->[1]}, "$name$rep $compounds->{$well}->[0], $compounds->{$well}->[1]\%";
+				#push @{$report->[2]}, "$compounds->{$well}->[0], $compounds->{$well}->[1]\%";
+				#push @{$report->[2]}, "$compounds{$well}[1], $compounds{$well}[2]\%";
+				push @{$report->[2]}, "$compounds{$well}[1]";
+				push @{$report->[3]}, "$well";
+				#push @{$report->[2]}, "$well";
+				if(scalar @$report < 5)
+				#if(scalar @$report < 4)
+				{
+					for (my $i = 4; $i < scalar(@{$raw_data->{$name}->{$rep}->{'Minutes'}})+4; $i++)
+					#for (my $i = 3; $i < scalar(@{$raw_data->{$name}->{$rep}->{'Minutes'}})+3; $i++)
+					{
+						push @{$report->[$i]}, $raw_data->{$name}->{$rep}->{'Minutes'}->[$i-4];
+						#push @{$report->[$i]}, $raw_data->{$name}->{$rep}->{'Minutes'}->[$i-3];
+					}
+				}
+                for (my $i = 4; $i < scalar @$report; $i++)
+				#for (my $i = 3; $i < scalar @$report; $i++)
+				{
+					push @{$report->[$i]}, $raw_data->{$name}->{$rep}->{$well}->[$i-4];
+					#push @{$report->[$i]}, $raw_data->{$name}->{$rep}->{$well}->[$i-3];
+				}
+			}
+		}
+=pod
+		push @{$report->[0]}, $name;
+		push @{$report->[1]}, 'Average';
+		#push @{$report->[2]}, "$compounds->{$well}->[0], $compounds->{$well}->[1]\% average";
+		push @{$report->[2]}, "$compounds{$well}[1], $compounds{$well}[2]\% average";
+		push @{$report->[3]}, "$well";
+		for (my $i = 4; $i < scalar(@$report); $i++)
+		{
+			push @{$report->[$i]}, $raw_data->{$name}->{'Average'}->{$well}->[$i-4];
+		}
+		push @{$report->[0]}, $name;
+		push @{$report->[1]}, 'StdDev';
+		#push @{$report->[2]}, "$compounds->{$well}->[0], $compounds->{$well}->[1]\% standard deviation";
+		push @{$report->[2]}, "$compounds{$well}[1], $compounds{$well}[2]\% standard deviation";
+		push @{$report->[3]}, "$well";
+		for (my $i = 4; $i < scalar(@$report); $i++)
+		{
+			push @{$report->[$i]}, $raw_data->{$name}->{'StdDev'}->{$well}->[$i-4];
+		}
+=cut
+	}
+}
+=pod
+for (my $i = 2; $i < @{$raw_data->{$names[0]}->{'Minutes'}} + 2; $i++)
+{
+	push @{$report->[$i]}, $raw_data->{$names[0]}->{'Minutes'}->[$i-2];
+}
+foreach my $well (@{$option_hash->{'wells'}})
+{
+####
+	push @{$report->[0]}, @names, 'Average';
+####
+}
+for (my $j = 0; $j < scalar @$wells; $j++)
+{
+	for (my $i = 0; $i < (scalar @{$report->[0]} -1)/(scalar @$wells); $i++)
+	{
+		#push @{$report->[1]}, "$compounds->{$wells->[$j]}->[0], $compounds->{$wells->[$j]}->[1]\%";
+		push @{$report->[1]}, "$compounds{$wells->[$j]}[1], $compounds{$wells->[$j]}[2]\%";
+	}
+}
+my $num_ent = scalar @{$phenotypes->{$names[0]}->{$wells->[0]}};
+for (my $i = 2; $i < $num_ent +2; $i++)
+{
+	foreach my $well (@$wells)
+	{
+		foreach my $name (@names)
+		{
+			push @{$report->[$i]}, $phenotypes->{$name}->{$well}->[$i-2];
+		}
+####
+		push @{$report->[$i]}, $averages->{$well}->[$i-2];
+####
+	}
+}
+=cut
+foreach my $line (@$report)
+{
+	print STDOUT join("\t", @$line), "\n";
+}
+#die Dumper($phenotypes);
+
+#################
+# subroutines
+#################
+
+sub outside_data
+{
+	my $file = shift @_;
+	open(IN, "<$file") || die "can't open $file";
+	my $newdata;
+	while (<IN>) {$newdata .= $_}
+	my $anca_plate; # this is the name of the variable in the file
+	#my $VAR1;
+	eval($newdata);
+	return ($anca_plate);
+}
+
+sub read_plate {
+	my $file = shift;
+	open(FILE,"<",$file) or die "Couldn't open $file.\n";
+	my %content; # Hash to hold file data
+	while( <FILE> ) {
+		chomp;
+		my ($well,$source,$media,$conc) = split /\t/;
+		$content{$well} = [$source,$media,$conc];
+	}
+	return %content;
+}
+
+sub take_average
+{
+	my ($data, $titlesref, $reps, $clone) = @_;
+	my @titles = @$titlesref;
+	#unless($clone){$clone = 'Average';}
+	foreach my $title (@titles[1..$#titles])
+	{
+		for (my $i = 0; $i < $timepoints; $i++)
+		{
+			my (@values);
+			foreach my $strain (@$reps)
+			{
+				push @values, $data->{$clone}->{$strain}->{$title}->[$i];
+				#$phenotypes->{$clone}->{$title}->[$i] += $data->{$strain}->{$title}->[$i];
+			}
+			#$phenotypes->{$clone}->{$title}->[$i] = $phenotypes->{$clone}->{$title}->[$i]/scalar(@$reps);
+			my $total = 0;
+			foreach (@values){$total+=$_;}
+			my $avg = $total/scalar(@values);
+			$data->{$clone}->{'Average'}->{$title}->[$i] = $avg;
+			my $sumsquares =0;
+			foreach my $value (@values)
+			{
+				$sumsquares += ($value-$avg)*($value-$avg);
+			}
+			$data->{$clone}->{'StdDev'}->{$title}->[$i] = sqrt($sumsquares/(scalar(@$reps)-1));
+=pod
+			if ($clone eq 'Average')
+			{
+				my $sum_sqs = 0;
+				foreach(@values)
+				{
+					$sum_sqs += ($_-$avg)^2;
+				}
+				$phenotypes->{'Std_err'}->{$title}->[$i] = $sum_sqs/sqrt(scalar(@values));
+			}
+=cut
+		}
+	}
+
+}
+
+1;

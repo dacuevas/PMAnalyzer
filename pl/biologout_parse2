@@ -1,0 +1,120 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use Date::Parse;
+
+my ($fh, $times, $data, $datatype, $data_units, $wellnum);
+my $counter =1;
+my $file = $ARGV[0];
+open FH, "<$file";
+while(<FH>)
+{
+	chomp;
+	if($_ =~ /^(\w\d+)\s+([0123456789.]+)/)
+	{
+		#$well = $1;
+		#$od = $2;
+		push @{$data->{$file}->{$datatype}->{$1}}, $2;
+		if($counter < 97)
+		{
+			$wellnum->{$counter}=$1;
+			$counter++;
+		}
+	}
+	elsif($_ =~ /^Units\:\s+([\w\.]+)/)
+	{
+		unless($data_units->{$datatype})
+		{
+			$data_units->{$datatype} = $1;
+		}
+	}
+	elsif($_ =~ /^Data\:\s+([\w\s]+?)$/)
+	{
+		$datatype = $1;
+		push @{$data->{$file}->{$datatype}->{'time'}}, $times;
+	}
+	elsif($_ =~ /(\d.*?\s.{11})\s+/)
+	{
+		$times = $1;
+	}
+}
+timepoints($data, $file);
+print_ordered($data, $file, $data_units, $wellnum);
+
+sub timepoints
+{
+	# this is to determine the spacing between each measurement
+	my ($data, $file) = @_;
+	
+	foreach my $datatype (keys %{$data->{$file}})
+	{
+###		my $points = [qw(0)];
+###		for (my $i = 0; $i < scalar (@{$data->{$file}->{$datatype}->{'time'}}) -1; $i++)
+###		{
+###			my ($hour1, $minute1, $second1, $half1) = ($data->{$file}->{$datatype}->{'time'}->[$i] =~ /^(\d\d)\:(\d\d)\:(\d\d)\s+(\w\w)/);
+###			my ($hour2, $minute2, $second2, $half2) = ($data->{$file}->{$datatype}->{'time'}->[$i+1] =~ /^(\d\d)\:(\d\d)\:(\d\d)\s+(\w\w)/);
+###			# if the current and next timepoints are during the same half of the day,
+###			# easy subtraction can be done to determine the number of minutes between
+###			# samplings
+###			$hour1 = $half1 eq 'PM' && $hour1 < 12 ? $hour1+=12 : $hour1;
+###			$hour1 = $half1 eq 'AM' && $hour1 == 12 ? $hour1 = 0: $hour1;
+###			$hour2 = $half2 eq 'PM' && $hour2 < 12 ? $hour2+=12 : $hour2;
+###			$hour2 = $half2 eq 'AM' && $hour2 == 12 ? $hour2 = 0: $hour2;
+###			my ($hdiff, $mdiff, $sdiff);
+###			$hdiff = $hour2 < $hour1 ? (12-$hour1)+$hour2: $hour2-$hour1;
+###			if ($minute2 < $minute1)
+###			{
+###				#$mdiff = (($hdiff*60)-$minute1)+$minute2;
+###				$mdiff = $hdiff > 1 ? (($hdiff*60)-$minute1)+$minute2 : (60-$minute1)+$minute2;
+###			}
+###			else
+###			{
+###				$mdiff = ($hdiff*60)+$minute2-$minute1;
+###			}
+###			if ($second2 < $second1)
+###			{
+###				$sdiff = 60-$second1+$second2;
+###			}
+###			else
+###			{
+###				$sdiff = $second2 - $second1;
+###			}
+###			push @$points, sprintf("%.0f", $points->[$i]+$mdiff+($sdiff/60));
+        ### MODIFIED ###
+        # Using Date module and report hours instead of minutes
+        my $points = [qw(0.0)];
+        for (my $i=0; $i < scalar (@{$data->{$file}->{$datatype}->{'time'}})-1; ++$i) {
+            my $date1 = str2time($data->{$file}->{$datatype}->{'time'}->[$i]);
+            my $date2 = str2time($data->{$file}->{$datatype}->{'time'}->[$i+1]);
+            my $hrsDiff = ($date2 - $date1) / 3600;
+            push @$points, sprintf("%.1f", $points->[$i]+$hrsDiff);
+		}
+		@{$data->{$file}->{$datatype}->{'time'}} = @$points;
+	}
+	#return ($data);
+}
+sub print_ordered
+{
+	my ($data, $file, $data_units, $wellnum) = @_;
+	my @wells = map {$wellnum->{$_}} sort {$a <=> $b} keys %{$wellnum};
+	my ($time_reading);
+	foreach my $datatype (keys %{$data_units})
+	{
+		print STDOUT "$datatype\t$data_units->{$datatype}\n";
+		print STDOUT "Minutes\t", join("\t", @wells), "\n";
+		for (my $i = 0; $i< scalar (@{$data->{$file}->{$datatype}->{'time'}}); $i++)
+		{
+			print STDOUT "$data->{$file}->{$datatype}->{'time'}->[$i]";
+			foreach my $well (@wells)
+			{
+				print STDOUT "\t$data->{$file}->{$datatype}->{$well}->[$i]";
+			}
+			print STDOUT "\n";
+			
+		}
+	}
+	
+}
+
+1;
