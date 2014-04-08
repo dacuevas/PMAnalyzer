@@ -2,9 +2,13 @@
 
 usage() {
 	echo "
+usage: $scriptname -c config_filename [Options]
+OR
 usage: $scriptname -i PM_data_directory -n output_directory -o output_name -p plate_filename -r \"regex\" [Options]
 
 Required
+   -c [config_filename]    : Configuration file listing all parameters (this takes precedence)
+   OR
    -i [PM_data_directory]  : PM data directory path to files
    -n [output_directory]   : Output directory (will create if non-existent)
    -o [output_name]        : Prefix prepended to all output files
@@ -12,7 +16,7 @@ Required
    -r \"[regex]\"            : Regular expression to indicate clone names found in OD filenames (quotes around regex are recommended)
 
 Optional
-   -c                      : Clear all intermediate files (except for input file into PManalysis)
+   --clear                 : Clear all intermediate files (except for input file into PManalysis)
    --debug                 : Print out debug messages
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
@@ -27,6 +31,16 @@ error() {
 	echo "*****FATAL ERROR OCCURRED*****" >&1
 	echo $1 >&2
 	exit 1
+}
+
+checkConfigFile() {
+    configfile_secured="/tmp/PMAnalyzer_secured.cfg"
+    if egrep -q -v '^#|^[^ ]*=[^;]*' "$1"; then
+        # filter the original to a new file
+        egrep '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
+        configfile="$configfile_secured"
+    fi
+    source "$configfile"
 }
 
 checkInputDirectory() {
@@ -48,13 +62,13 @@ checkOutputDir() {
 
 checkScriptDir() {
 	if [[ -z $1 ]]; then
-		scriptdir="./" # Script directory is current directory
+		pyscriptdir="./" # Script directory is current directory
 	else
 		[[ ! -d $1 ]] && getTime && error "${currtime}	Script directory '$1' does not exist."
-		scriptdir=$1
+		pyscriptdir=$1
 	fi
 	# Remove trailing slash
-	scriptdir=$(echo $scriptdir | perl -ne 'chomp; s/\/$//; print;')
+	pyscriptdir=$(echo $pyscriptdir | perl -ne 'chomp; s/\/$//; print;')
 }
 
 
@@ -66,8 +80,9 @@ getTime() {
 #ARGUMENT PARSING
 ####################################################
 
-scriptdir=$(cd $(dirname $0); pwd -P)/py
-parsingscriptdir=$(cd $(dirname $0); pwd -P)/pl
+scriptdir=$(cd $(dirname $0); pwd -P)
+pyscriptdir=$(cd $(dirname $0); pwd -P)/py
+plscriptdir=$(cd $(dirname $0); pwd -P)/pl
 scriptname=$(echo $0 | perl -ne '/\/?.*\/(.+)/; print $1;')
 filterflag=""
 hmFlag=""
@@ -82,6 +97,11 @@ while [[ $# != 0 ]]; do
 		exit 2
 		;;
 	-c)
+        shift
+		[[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing config filename" >&2 && usage && exit 2
+		configfile=$1
+		;;
+	--clear)
 		clearfiles=0
 		;;
 	--debug)
@@ -95,7 +115,7 @@ while [[ $# != 0 ]]; do
         ;;
 	-i)
 		shift
-		[[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -o value" >&2 && usage && exit 2
+		[[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -i value" >&2 && usage && exit 2
 		inputfiledir=$1
 		;;
 	-n)
@@ -133,8 +153,12 @@ while [[ $# != 0 ]]; do
 	shift
 done
 
+# Check if config file was supplied
+if [[ $configfile ]]; then
+    checkConfigFile $configfile
+fi
 
-# Check if required options are given
+# Check if required variables are set
 if [[ ! $inputfiledir ||
 	! $outputname ||
 	! $plate ||
@@ -151,7 +175,7 @@ checkInputDirectory $inputfiledir
 checkOutputDir $outputdir
 
 # Check if script direectory exists
-checkScriptDir $scriptdir
+checkScriptDir $pyscriptdir
 
 # Convert input files line endings from DOS to UNIX
 getTime && echo "${currtime}	*****Checking line endings*****" >&1
@@ -176,7 +200,7 @@ for f in ${inputfile[@]}; do
 	f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
 	out="${rname}_${outputname}.txt"
 	parsedfiles=("${parsedfiles[@]}" "$outputdir/$out") # Append to array
-	cmd="${parsingscriptdir}/biologout_parse2 $inputfiledir/$f > $outputdir/${out}"
+	cmd="${plscriptdir}/biologout_parse2 $inputfiledir/$f > $outputdir/${out}"
 	[[ $verbose ]] && getTime && echo "${currtime}	Executing $cmd" >&1
 	eval $cmd
 	[[ $? -ne 0 ]] && getTime && error "${currtime}	Fail on command: $cmd"
@@ -188,7 +212,7 @@ done
 ################################################
 
 out="${outputname}_data.txt"
-cmd="${parsingscriptdir}/pm_data_organizer4 -p $plate -f ${parsedfiles[@]} -r $reps > $outputdir/${out}"
+cmd="${plscriptdir}/pm_data_organizer4 -p $plate -f ${parsedfiles[@]} -r $reps > $outputdir/${out}"
 getTime && echo "${currtime}	*****Parsing phase 2*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}	Executing $cmd" >&1
 eval $cmd
@@ -200,7 +224,7 @@ eval $cmd
 ################################################
 
 in="$outputdir/${out}"
-cmd="python ${scriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
+cmd="python ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
 getTime && echo "${currtime}	*****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}	Executing $cmd" >&1
 eval $cmd
