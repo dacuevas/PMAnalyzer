@@ -169,18 +169,18 @@ printStatus('Processing complete.')
 printStatus('Printing output files...')
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
-fhInfo.write('sample\tmainsource\tgrowthcondition\twell\tlag\t')
+fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
 fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
 
 # logistic_curve file: logistic curves
 fhLogCurve = open('{}/logistic_curves_{}.txt'.format(outDir, outSuffix), 'w')
-fhLogCurve.write('sample\tmainsource\tgrowthcondition\twell\t')
+fhLogCurve.write('sample\tmainsource\tsubstrate\twell\t')
 fhLogCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLogCurve.write('\n')
 
 # median file: median curves
 fhMedCurve = open('{}/median_curves_{}.txt'.format(outDir, outSuffix), 'w')
-fhMedCurve.write('sample\tmainsource\tgrowthcondition\twell\t')
+fhMedCurve.write('sample\tmainsource\tsubstrate\twell\t')
 fhMedCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhMedCurve.write('\n')
 
