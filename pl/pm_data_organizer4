@@ -102,7 +102,7 @@ foreach my $file (@{$option_hash->{'files'}})
     my $fname = fileparse($file, qr/\.[^.]*/);
 	if( $option_hash->{"replicates"} > 1 ) {
 		#($name, $rep) = $fname =~ /([A-Za-z0-9]+\d?)([A-Za-z0-9])/i;
-		($name, $rep) = $fname =~ /^([A-Za-z.]*\d+)_([A-Za-z0-9-]+)/i;
+		($name, $rep) = $fname =~ /^([A-Za-z0-9.]+)_([A-Za-z0-9-]+)/i;
 	}
 	else {
 		#($name) = $fname =~ /([A-Za-z0-9]+)/i;
@@ -124,17 +124,17 @@ foreach my $file (@{$option_hash->{'files'}})
     if( ! defined $name && ! defined $rep ) {
         print STDERR "ERROR\nname and rep variables are undefined\n";
         print STDERR "Current file: $fname\n";
-        exit;
+        exit 1;
     }
     elsif( ! defined $name ) {
         print STDERR "ERROR\nname variable is undefined\n";
         print STDERR "Current file: $fname\n";
-        exit;
+        exit 1;
     }
     elsif( ! defined $rep ) {
         print STDERR "ERROR\nrep variable is undefined\n";
         print STDERR "Current file: $fname\n";
-        exit;
+        exit 1;
     }
 	open FH, "<$file" or die "Couldn't open $file for reading\n";
 	while(<FH>)
