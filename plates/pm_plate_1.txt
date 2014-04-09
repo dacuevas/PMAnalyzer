@@ -1,0 +1,96 @@
+A1	Carbon	Propionic Acid	0.3
+B1	Carbon	Glycine	0.3
+C1	Carbon	Citric Acid	0.3
+D1	Carbon	L-Alanine	0.3
+E1	Carbon	Thymidine	0.3
+F1	Carbon	Xylitol	0.3
+G1	Nitrogen	Negative Control	0.0
+H1	Nitrogen	L-Histidine	0.3
+A2	Carbon	L-Glutamic Acid	0.3
+B2	Carbon	Negative Control	0.0
+C2	Carbon	D-Mannose	0.3
+D2	Carbon	L-Arabinose	0.3
+E2	Carbon	Sucrose	0.3
+F2	Carbon	L-Glutamine	0.3
+G2	Nitrogen	Tyramine	0.2
+H2	Nitrogen	Thymine	0.2
+A3	Carbon	D-Glucose	0.3
+B3	Carbon	Quinic Acid	0.3
+C3	Carbon	L-Serine	0.3
+D3	Carbon	L-Threonine	0.3
+E3	Carbon	D-Xylose	0.3
+F3	Carbon	L-Rhamnose	0.3
+G3	Nitrogen	Uridine	0.3
+H3	Nitrogen	L-Glutathione	0.2
+A4	Carbon	Potassium Sorbate	0.3
+B4	Carbon	Sodium Succinate	0.3
+C4	Carbon	D-Salicin	0.3
+D4	Carbon	4 Hydroxy-Phenyl Acetic Acid	0.3
+E4	Carbon	L-Cysteine	0.3
+F4	Carbon	Putrescine	0.3
+G4	Nitrogen	Inosine	0.3
+H4	Nitrogen	Allantoin	0.2
+A5	Carbon	Lactulose	0.3
+B5	Carbon	Dulcitol	0.3
+C5	Carbon	D-Cellubiose	0.3
+D5	Carbon	D-Ribose	0.3
+E5	Carbon	Alpha-D-Lactose	0.3
+F5	Carbon	2 Deoxy-D-Ribose	0.3
+G5	Nitrogen	Histamine	0.3
+H5	Nitrogen	Adenine	0.2
+A6	Carbon	Glycerol	0.3
+B6	Carbon	Alpha-D-Glucose	0.3
+C6	Carbon	Adonitol	0.3
+D6	Carbon	Alpha-D-Melebiose	0.3
+E6	Carbon	D-Raffinose	0.3
+F6	Carbon	L-Arabitol	0.3
+G6	Nitrogen	L-Pyro-Glutamic Acid	0.3
+H6	Nitrogen	Glycine	0.3
+A7	Carbon	Myo-Inositol	0.3
+B7	Carbon	L-Xylose	0.3
+C7	Carbon	D-Glucose-6-Phosphate	0.3
+D7	Carbon	D-Alanine	0.3
+E7	Carbon	D-Asparagine	0.3
+F7	Carbon	D-Glucosamine	0.3
+G7	Nitrogen	Cytidine	0.3
+H7	Nitrogen	Beta-Phenylethylamine	0.3
+A8	Carbon	D-Serine	0.3
+B8	Carbon	L-Aspartic Acid	0.2
+C8	Carbon	L-Sorbose	0.3
+D8	Carbon	L-Fucose	0.3
+E8	Carbon	i-Erythritol	0.3
+F8	Carbon	L-Phenylalanine	0.3
+G8	Nitrogen	Adenosine	0.2
+H8	Nitrogen	L-Proline	0.2
+A9	Carbon	D-Galactose	0.3
+B9	Carbon	D-Fructose	0.3
+C9	Carbon	D-Arabitol	0.3
+D9	Carbon	L-Asparagine	0.2
+E9	Carbon	D-Cysteine	0.3
+F9	Carbon	D-Glutamic Acid	0.2
+G9	Nitrogen	L-Arginine	0.2
+H9	Nitrogen	D-Methionine	0.2
+A10	Carbon	Oxalic Acid	0.2
+B10	Carbon	L-Valine	0.2
+C10	Carbon	L-Lysine	0.3
+D10	Carbon	L-Leucine	0.3
+E10	Carbon	L-Isoleucine	0.2
+F10	Carbon	D-Arabinose	0.3
+G10	Nitrogen	Thiourea	0.3
+H10	Nitrogen	Cytosine	0.2
+A11	Carbon	Malic Acid	0.3
+B11	Carbon	Sodium Pyruvate	0.3
+C11	Carbon	D-Trehalose	0.3
+D11	Carbon	D-Aspartic Acid	0.2
+E11	Carbon	L-Cysteic Acid	0.3
+F11	Carbon	L-Tryptophan	0.2
+G11	Nitrogen	Biuret	0.2
+H11	Nitrogen	D-Valine	0.2
+A12	Carbon	L-Methionine	0.2
+B12	Carbon	Lactate	0.3
+C12	Carbon	Acetic Acid	0.3
+D12	Carbon	Inosine	0.3
+E12	Carbon	Adenosine	0.2
+F12	Carbon	L-Pyro-Glutamic Acid	0.3
+G12	Nitrogen	Guanidine	0.3
+H12	Nitrogen	N-Acetyl-D-Glucosamine	0.2

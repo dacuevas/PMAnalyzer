@@ -1,0 +1,96 @@
+A1	Nitrogen	L-Glutamic Acid	0.3
+B1	Nitrogen	D-Glutamic Acid	0.3
+C1	Nitrogen	L-Ornithine	0.3
+D1	Sulfur	Negative Control 1	0.0
+E1	Sulfur	L-Methionine	0.3
+F1	Sulfur	D-Methionine	0.2
+G1	Phosphorus	Blank 1	0.0
+H1	Phosphorus	Negative Control 2	0.0
+A2	Nitrogen	L-Asparagine	0.3
+B2	Nitrogen	D-Asparagine	0.3
+C2	Nitrogen	Putrescine	0.3
+D2	Sulfur	Blank 2	0.0
+E2	Sulfur	L-Cysteine	0.3
+F2	Sulfur	D-Cysteine	0.3
+G2	Phosphorus	Blank 3	0.0
+H2	Phosphorus	Diethyl-Dithiophosphate	0.3
+A3	Nitrogen	L-Alanine	0.3
+B3	Nitrogen	D-Alanine	0.3
+C3	Nitrogen	D-Glucosamine	0.3
+D3	Sulfur	Blank 4	0.0
+E3	Sulfur	L-Cysteic Acid	0.3
+F3	Sulfur	Isethionic Acid	0.3
+G3	Phosphorus	Blank 5	0.0
+H3	Phosphorus	D-Glucose-6-Phosphate	0.3
+A4	Nitrogen	L-Methione	0.2
+B4	Nitrogen	L-Tryptophan	0.2
+C4	Nitrogen	2-Deoxy-D-Ribose	0.3
+D4	Sulfur	Blank 6	0.0
+E4	Sulfur	Glutathione	0.2
+F4	Sulfur	Sulfanic Acid	0.2
+G4	Phosphorus	Blank 7	0.0
+H4	Phosphorus	Adenosine-5-Monophoshate	0.3
+A5	Nitrogen	Positive Control	0.0
+B5	Nitrogen	D-Aspartic Acid	0.3
+C5	Nitrogen	Thymidine	0.3
+D5	Sulfur	Blank 8	0.0
+E5	Sulfur	Thiourea	0.3
+F5	Sulfur	DL-Alpha-Amino-N-Butyric Acid	0.2
+G5	Phosphorus	Blank 9	0.0
+H5	Phosphorus	Sodium Pyrophosphate	0.3
+A6	Nitrogen	L-Glutamine	0.3
+B6	Nitrogen	L-Phenyl-Alanine	0.3
+C6	Nitrogen	Acetamide	0.3
+D6	Sulfur	Blank 10	0.0
+E6	Sulfur	L-Djenkolic Acid	0.3
+F6	Sulfur	Sodium Thiosulfate	0.3
+G6	Phosphorus	Blank 11	0.0
+H6	Phosphorus	Sodium Thiophosphate	0.3
+A7	Nitrogen	L-Cysteine	0.3
+B7	Nitrogen	D-Cysteine	0.3
+C7	Nitrogen	Blank 12	0.0
+D7	Sulfur	Blank 13	0.0
+E7	Sulfur	Acetyl Cysteine	0.3
+F7	Sulfur	DL-Ethionine	0.3
+G7	Phosphorus	Blank 14	0.0
+H7	Phosphorus	Potassium phosphate	0.3
+A8	Nitrogen	L-Serine	0.3
+B8	Nitrogen	D-Serine	0.3
+C8	Nitrogen	Blank 15	0.0
+D8	Sulfur	Blank 16	0.0
+E8	Sulfur	1-Butane-Sulfonic Acid	0.3
+F8	Sulfur	N-Acetyl-DL-Methionine	0.3
+G8	Phosphorus	Blank 17	0.0
+H8	Phosphorus	DL-Alpha-Glycerophosphate	0.3
+A9	Nitrogen	L-Threonine	0.2
+B9	Nitrogen	L-Valine	0.2
+C9	Nitrogen	Blank 18	0.0
+D9	Sulfur	Blank 19	0.0
+E9	Sulfur	Taurocholic Acid	0.3
+F9	Sulfur	Methane Sulfonic Acid	0.3
+G9	Phosphorus	Blank 20	0.0
+H9	Phosphorus	Creatinephosphate	0.3
+A10	Nitrogen	L-Leucine	0.3
+B10	Nitrogen	L-Isoleucine	0.2
+C10	Nitrogen	Blank 21	0.0
+D10	Sulfur	Blank 22	0.0
+E10	Sulfur	Potassium-Tetra-Thionate	0.3
+F10	Sulfur	Gamma-Amino-N-Butyric Acid	0.2
+G10	Phosphorus	Blank 23	0.0
+H10	Phosphorus	Beta-Glycerophosphate	0.3
+A11	Nitrogen	L-Lysine	0.3
+B11	Nitrogen	Tyrosine	0.3
+C11	Nitrogen	Blank 24	0.0
+D11	Sulfur	Blank 25	0.0
+E11	Sulfur	Magnesium Sulfate	0.3
+F11	Sulfur	Taurine	0.3
+G11	Phosphorus	Blank 26	0.0
+H11	Phosphorus	Blank 27	0.0
+A12	Nitrogen	Negative Control 3	0.0
+B12	Nitrogen	L-Citrulline	0.3
+C12	Nitrogen	Blank 28	0.0
+D12	Sulfur	Blank 29	0.0
+E12	Sulfur	Diethyl-Dithiophosphate	0.3
+F12	Sulfur	N-Acetyl-L-Cysteine	0.3
+G12	Phosphorus	Blank 30	0.0
+H12	Phosphorus	Blank 31	0.0
