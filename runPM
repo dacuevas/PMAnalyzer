@@ -21,7 +21,7 @@ Optional
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
    --hm                    : Use new harmonic mean calculation
-   --num_replicates        : Flag if there are replicates involved
+   --replicates        : Flag if there are replicates involved
    -v                      : Verbose output
 
 " >&2
@@ -140,7 +140,7 @@ while [[ $# != 0 ]]; do
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -r value" >&2 && usage && exit 2
         regex=$1
         ;;
-    --num_replicates)
+    --replicates)
         num_replicates=2
         ;;
     -v)
