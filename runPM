@@ -1,4 +1,10 @@
 #!/bin/bash
+# runPM
+# Automated bash script for running entire the phenotype microarray analysis
+#
+# Author: Daniel A Cuevas
+# Created on 22 Nov. 2013
+# Updated on 10 Apr. 2014
 
 usage() {
     echo "
@@ -190,35 +196,47 @@ for f in ${inputfile[@]}; do
 done
 
 ################################################
-#BIOLOG PARSING PART 1
+#ANALYST PARSING
 ################################################
 
-parsedfiles=() # Will contain array of file names for next step
-
-# Iterate through files and produce first parsed version of each file
-getTime && echo "${currtime}    *****Parsing phase 1*****" >&1
-for f in ${inputfile[@]}; do
-    rname=$(echo "$f,$regex" | perl -ne 'chomp; ($f,$r)=split /,/; $f=~m/($r)/; print $1;')
-    f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
-    out="${rname}_${outputname}.txt"
-    parsedfiles=("${parsedfiles[@]}" "$outputdir/$out") # Append to array
-    cmd="${plscriptdir}/biologout_parse2 $inputfiledir/$f > $outputdir/${out}"
-    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
-    [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
-done
-
-
-################################################
-#BIOLOG PARSING PART 2
-################################################
-
-out="${outputname}_data.txt"
-cmd="${plscriptdir}/pm_data_organizer4 -p $plate -f ${parsedfiles[@]} -r $num_replicates > $outputdir/${out}"
-getTime && echo "${currtime}    *****Parsing phase 2*****" >&1
+getTime && echo "${currtime}    *****Parsing analyst files*****" >&1
+out="growthcurves_${outputname}.txt"
+cmd="${plscriptdir}/pmParser.pl -d $inputfiledir -p $plate > $outputdir/${out}"
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
+
+
+################################################
+#BIOLOG PARSING PART 1
+################################################
+#
+#parsedfiles=() # Will contain array of file names for next step
+#
+## Iterate through files and produce first parsed version of each file
+#getTime && echo "${currtime}    *****Parsing phase 1*****" >&1
+#for f in ${inputfile[@]}; do
+#    rname=$(echo "$f,$regex" | perl -ne 'chomp; ($f,$r)=split /,/; $f=~m/($r)/; print $1;')
+#    f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
+#    out="${rname}_${outputname}.txt"
+#    parsedfiles=("${parsedfiles[@]}" "$outputdir/$out") # Append to array
+#    cmd="${plscriptdir}/biologout_parse2 $inputfiledir/$f > $outputdir/${out}"
+#    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
+#    eval $cmd
+#    [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
+#done
+#
+#
+#################################################
+##BIOLOG PARSING PART 2
+#################################################
+#
+#out="${outputname}_data.txt"
+#cmd="${plscriptdir}/pm_data_organizer4 -p $plate -f ${parsedfiles[@]} -r $num_replicates > $outputdir/${out}"
+#getTime && echo "${currtime}    *****Parsing phase 2*****" >&1
+#[[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
+#eval $cmd
+#[[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
 
 ################################################

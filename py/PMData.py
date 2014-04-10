@@ -16,19 +16,16 @@ class PMData:
         self.numClones = 0
         self.numConditions = 0
         self.numFiltered = 0
-        self.numReplicates = {}  # Hash of clone->{rep. count}
+        self.replicates = {}  # Hash of clone->[reps]
         self.clones = []  # Set of unique clone names
         self.conditions = {}  # Hash of source->[conditions]
-        self.wells = {}  # Hash of source->{condition]->well
+        self.wells = {}  # Hash of well->(mainsource, condition)
         self.time = []  # Array of time values
 
-        self.clonesNU = []  # Array of clones (non-unique)
-        self.sourcesNU = []  # Array of sources (non-unique)
-        self.conditionsNU = []  # Array of conditions (non-unique)
-
         # Primary data structure to access data
-        self.dataHash = {}  # clone->{rep #}|->{source}->{condition}->[ODs]
-                            #                                      |->{filter}
+        self.dataHash = {}  # clone->rep #->well|->[ODs]
+                            #                   |->filter
+
         self.__beginParse()
 
     def __beginParse(self):
@@ -39,173 +36,105 @@ class PMData:
             l = l.rstrip('\n')
             ll = l.split('\t')
 
-            # Line 1: clone names
+            # Line 1: header
             if lnum == 0:
-                self.__parseClones(ll)
+                self.__parseHeader(ll)
 
-            # Line 2: source names
-            elif lnum == 1:
-                self.__parseSources(ll)
-
-            # Line 3: condition substrates
-            elif lnum == 2:
-                self.__parseConditions(ll)
-
-            # Line 4: well indicies [A-H][1-12]
-            elif lnum == 3:
-                self.__parseWells(ll)
-
-            # Line 5+: OD values
+            # Line 2+: growth curves
             else:
-                self.__parseOD(ll)
+                self.__parseODCurve(ll)
         f.close()
 
         # Check each growth curve is the same length
         self.__QACheck()
 
-    def __parseClones(self, ll):
-        '''Clone line parsing method'''
-        # All non-unique clones (order preserved)
-        self.clonesNU = ll[1:]
+        # Set number of growth conditions present
+        self.numConditions = len(self.wells)
 
-        # Unique set of clones
-        self.clones = set(ll[1:])
-        self.numClones = len(self.clones)
+    def __parseHeader(self, ll):
+        '''Header line contains data columns and time values'''
+        self.time = [float(x) for x in ll[4:]]
 
-    def __parseSources(self, ll):
-        '''Main sources line parsing method'''
-        # All non-unique main sources (order preserved)
-        self.sourcesNU = ll[1:]
+    def __parseODCurve(self, ll):
+        '''Growth curve parsing method'''
+        # Extract curve info
+        (c, ms, gc, w) = ll[0:4]
 
-        # Initialize conditions hash
-        self.conditions = {s: [] for s in set(self.sourcesNU)}
+        # Extract clone name and replicate name
+        parsedName = c.split('_')
+        try:
+            (cName, rep) = parsedName[0:2]
+        except:
+            print parsedName
+            sys.exit(1)
 
-    def __parseConditions(self, ll):
-        '''Growth conditions line parsing method'''
-        # All non-unique growth conditions (order preserved)
-        self.conditionsNU = ll[1:]
+        if cName not in self.clones:
+            self.clones.append(cName)
+            self.numClones += 1
+            self.replicates[cName] = []
 
-        # Add to conditions hash
-        [self.conditions[self.sourcesNU[idx]].append(c)
-         for idx, c in enumerate(self.conditionsNU)]
+        if rep not in self.replicates[cName]:
+            self.replicates[cName].append(rep)
 
-        # Duplicate conditions created for each source
-        # in above method - must remove for unique set
-        for source in self.conditions:
-            self.conditions[source] = set(self.conditions[source])
-            self.numConditions += len(self.conditions[source])
+#        # Add condition to hash
+#        try:
+#            # Check to see if main source exists yet
+#            self.conditions[ms]
+#        except KeyError:
+#            # Error raised if non-existent
+#            # Create main source in hash
+#            self.conditions[ms] = []
+#
+#        if gc not in self.conditions[ms]:
+#            self.conditions[ms].append(gc)
+#            self.numConditions += 1
+#
+        # Add well info
+        self.wells[w] = (ms, gc)
 
-        # Initialize main data hash
-        prevClone = ""
-        prevCond = ""
-        numRep = 1
-        if self.numClones == 1:
-            totalReps = len(self.conditionsNU) / self.numConditions
+        # Add curve to primary data hash
+        # Initialize data hash when needed
+        try:
+            self.dataHash[cName]
+        except KeyError:
+            self.dataHash[cName] = {}
+        try:
+            self.dataHash[cName][rep]
+        except KeyError:
+            self.dataHash[cName][rep] = {}
 
-        for idx, clone in enumerate(self.clonesNU):
-            currCond = self.conditionsNU[idx]
-            # Keep track of replicate numbers
-            # Reset rep number if we reach a new clone name
-            if self.numClones == 1:
-                numRep = (idx % totalReps) + 1
-
-            else:
-                numRep = numRep + 1 if (clone == prevClone and
-                                        currCond == prevCond) else 1
-
-            # Update replicate count for clone
-            self.numReplicates[clone] = numRep
-            prevClone = clone
-            prevCond = currCond
-
-            if clone not in self.dataHash:
-                self.dataHash[clone] = {}
-
-            if numRep not in self.dataHash[clone]:
-                self.dataHash[clone][numRep] = {}
-
-            # Add condition to main data hash
-            # Pre-set filter to False
-            for source, sourceList in self.conditions.items():
-                self.dataHash[clone][numRep][source] =\
-                    {cond: {'filter': False, 'od': py.array([])}
-                     for cond in sourceList}
-
-    def __parseWells(self, ll):
-        '''Well line parsing method'''
-        # Store as source->{condition}->well
-        for idx, well in enumerate(ll[1:]):
-            source = self.sourcesNU[idx]
-            cond = self.conditionsNU[idx]
-            try:
-                # Intialize hash if the source was not yet added
-                self.wells[source]
-            except KeyError:
-                self.wells[source] = {}
-            self.wells[source][cond] = well
-
-    def __parseOD(self, ll):
-        '''OD data lines parsing method'''
-        ll = [float(x) for x in ll]
-
-        # Add the current time
-        self.time.append(ll[0])
-        numRep = 1
-        prevClone = ""
-        prevCond = ""
-        if self.numClones == 1:
-            totalReps = len(self.conditionsNU) / self.numConditions
-
-        for idx, od in enumerate(ll[1:]):
-            clone = self.clonesNU[idx]
-            source = self.sourcesNU[idx]
-            condition = self.conditionsNU[idx]
-
-            # Check which clone + replicate we are observing
-            if self.numClones == 1:
-                numRep = (idx % totalReps) + 1
-
-            else:
-                numRep = numRep + 1 if (clone == prevClone and
-                                        condition == prevCond) else 1
-            prevClone = clone
-            prevCond = condition
-
-            # Append OD reading to array
-            self.dataHash[clone][numRep][source][condition]['od'] =\
-                py.append(self.dataHash[clone][numRep][source]
-                          [condition]['od'], od)
+        curve = py.array([float(x) for x in ll[4:]])
+        self.dataHash[cName][rep][w] = {'od': curve, 'filter': False}
 
     def __QACheck(self):
         '''QA check to ensure stable data set'''
         problems = []
         numTime = len(self.time)
         for clone, repDict in self.dataHash.items():
-            for rep, sourceDict in repDict.items():
-                for source, condDict in sourceDict.items():
-                    for cond, odDict in condDict.items():
-
-                        # Find number of values in growth curve
-                        numVals = len(odDict['od'])
-                        if numVals != numTime:
-                            problems.append([clone, rep, source, cond,
-                                             'time:{}\tcurve:{}'.format(
-                                                 numTime, numVals)])
+            for rep, wellDict in repDict.items():
+                for w, odDict in wellDict.items():
+                    (ms, gc) = self.wells[w]
+                    # Find number of values in growth curve
+                    numVals = len(odDict['od'])
+                    if numVals != numTime:
+                        problems.append([clone, rep, ms, gc, w,
+                                        'time:{}\tcurve:{}'.format(
+                                            numTime, numVals)])
 
         # Print out issues
         for p in problems:
             print >> sys.stderr, '\t'.join([str(x) for x in p])
 
-    def getCloneReplicates(self, clone, source, condition, applyFilter=False):
-        '''Retrieve all growth curves for a clone+source+condition'''
+    def getCloneReplicates(self, clone, w, applyFilter=False):
+        '''Retrieve all growth curves for a clone+well'''
         # Check if any other replicates should be returned
         # retArray is a 2xN multidimensional numpy array
         retArray = py.array([])
         first = True
-        for i in xrange(1, self.numReplicates[clone] + 1):
+        for rep in self.replicates[clone]:
             # Get replicate
-            filterMe = self.dataHash[clone][i][source][condition]['filter']
-            currCurve = self.dataHash[clone][i][source][condition]['od']
+            filterMe = self.dataHash[clone][rep][w]['filter']
+            currCurve = self.dataHash[clone][rep][w]['od']
 
             # Check if filter is enabled and curve should be filtered
             if applyFilter and filterMe:
@@ -232,27 +161,20 @@ class PMData:
 
         # Iterate through clones
         for clone, repDict in self.dataHash.items():
-
             # Iterate through replicates
-            for rep, sourceDict in repDict.items():
-
-                # Iterate through main sources
-                for source, condDict in sourceDict.items():
-
-                    # Iterate through growth conditions
-                    for cond, odDict in condDict.items():
-
-                        # Check if filter is set to True
-                        if odDict['filter']:
-                            ret.append((clone, source, cond, rep,
-                                        odDict['od']))
+            for rep, wellDict in repDict.items():
+                # Iterate through wells
+                for w, odDict in wellDict.items():
+                    # Check if filter is set to True
+                    if odDict['filter']:
+                        ret.append((clone, rep, w, odDict['od']))
 
         return ret
 
-    def setFilter(self, clone, rep, source, condition, filter):
+    def setFilter(self, clone, rep, w, filter):
         '''Set filter for specific curve'''
-        oldFilter = self.dataHash[clone][rep][source][condition]['filter']
-        self.dataHash[clone][rep][source][condition]['filter'] = filter
+        oldFilter = self.dataHash[clone][rep][w]['filter']
+        self.dataHash[clone][rep][w]['filter'] = filter
 
         # If filter changed from False to True, increment number of filtered
         if not oldFilter and filter:
