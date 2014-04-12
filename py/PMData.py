@@ -64,7 +64,7 @@ class PMData:
         try:
             (cName, rep) = parsedName[0:2]
         except:
-            print parsedName
+            print(parsedName)
             sys.exit(1)
 
         if cName not in self.clones:
@@ -109,7 +109,7 @@ class PMData:
 
         # Print out issues
         for p in problems:
-            print >> sys.stderr, '\t'.join([str(x) for x in p])
+            print('\t'.join([str(x) for x in p]), file=sys.stderr)
 
     def getCloneReplicates(self, clone, w, applyFilter=False):
         '''Retrieve all growth curves for a clone+well'''
