@@ -32,7 +32,7 @@ class GrowthCurve:
         # Calculate asymptote using a sliding window of 3 data points
         stop = len(self.time) - 3
         maxA = -1
-        for idx in xrange(1, stop):
+        for idx in range(1, stop):
             av = py.mean(self.dataMed[idx:idx + 3])
             if av > maxA:
                 maxA = av
@@ -43,7 +43,7 @@ class GrowthCurve:
         # Calculate max growth rate using a sliding window of 4 data points
         stop = len(self.time) - 4
         maxGR = 0
-        for idx in xrange(1, stop):
+        for idx in range(1, stop):
 
             # Growth rate calculation:
             # (log(i+3) - log(i)) / (time(i+3) - time(i))

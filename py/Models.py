@@ -39,7 +39,7 @@ class Models:
                                                        ))
                                            ) for t in self.time]
             sse = py.sum([((self.data[i] - logDataTemp[i]) ** 2)
-                          for i in xrange(len(self.data) - 1)])
+                          for i in range(len(self.data) - 1)])
             if idx == 0 or sse < sseF:
                 logisticData = logDataTemp
                 lagF = lag
