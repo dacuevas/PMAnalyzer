@@ -12,6 +12,7 @@ import time
 import datetime
 import PMData
 import GrowthCurve
+import operator
 
 
 ###############################################################################
@@ -27,7 +28,7 @@ def timeStamp():
 
 def printStatus(msg):
     '''Print status message'''
-    print >> sys.stderr, timeStamp(), ' ', msg
+    print >> sys.stderr, '{} {}'.format(timeStamp(), msg)
     sys.stderr.flush()
 
 
@@ -172,35 +173,40 @@ fhMedCurve.write('sample\tmainsource\tsubstrate\twell\t')
 fhMedCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhMedCurve.write('\n')
 
+# Sort well numbers for print out
+ws = [(x[0], int(x[1:])) for x in pmData.wells.keys()]
+sortW = sorted(ws, key=operator.itemgetter(0, 1))
 # Iterate through clones
 for c, wellDict in logData.items():
     # Iterate through wells
-    for w, curve in wellDict.items():
-            (ms, gc) = pmData.wells[w]
+    for w in sortW:
+        w = "{}{}".format(w[0], w[1])
+        curve = wellDict[w]
+        (ms, gc) = pmData.wells[w]
 
-            # Print sample information
-            fhInfo.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
-            fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
-            fhMedCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        # Print sample information
+        fhInfo.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhMedCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
 
-            # Print OD readings
-            lag = curve.lag
-            mgr = curve.maxGrowthRate
-            asymptote = curve.asymptote
-            gLevel = curve.growthLevel
-            fhInfo.write('\t'.join(['{:.3f}'.format(x)
-                                    for x in (lag, mgr, asymptote, gLevel)]))
-            fhInfo.write('\n')
+        # Print OD readings
+        lag = curve.lag
+        mgr = curve.maxGrowthRate
+        asymptote = curve.asymptote
+        gLevel = curve.growthLevel
+        fhInfo.write('\t'.join(['{:.3f}'.format(x)
+                                for x in (lag, mgr, asymptote, gLevel)]))
+        fhInfo.write('\n')
 
-            # Print logistic curves
-            fhLogCurve.write('\t'.join(['{:.3f}'.format(x)
-                                        for x in curve.dataLogistic]))
-            fhLogCurve.write('\n')
+        # Print logistic curves
+        fhLogCurve.write('\t'.join(['{:.3f}'.format(x)
+                                    for x in curve.dataLogistic]))
+        fhLogCurve.write('\n')
 
-            # Print out median curve
-            fhMedCurve.write('\t'.join(['{:.3f}'.format(x)
-                                        for x in curve.dataMed]))
-            fhMedCurve.write('\n')
+        # Print out median curve
+        fhMedCurve.write('\t'.join(['{:.3f}'.format(x)
+                                    for x in curve.dataMed]))
+        fhMedCurve.write('\n')
 
 fhInfo.close()
 fhLogCurve.close()

@@ -18,7 +18,6 @@ class PMData:
         self.numFiltered = 0
         self.replicates = {}  # Hash of clone->[reps]
         self.clones = []  # Set of unique clone names
-        self.conditions = {}  # Hash of source->[conditions]
         self.wells = {}  # Hash of well->(mainsource, condition)
         self.time = []  # Array of time values
 
@@ -76,19 +75,6 @@ class PMData:
         if rep not in self.replicates[cName]:
             self.replicates[cName].append(rep)
 
-#        # Add condition to hash
-#        try:
-#            # Check to see if main source exists yet
-#            self.conditions[ms]
-#        except KeyError:
-#            # Error raised if non-existent
-#            # Create main source in hash
-#            self.conditions[ms] = []
-#
-#        if gc not in self.conditions[ms]:
-#            self.conditions[ms].append(gc)
-#            self.numConditions += 1
-#
         # Add well info
         self.wells[w] = (ms, gc)
 
