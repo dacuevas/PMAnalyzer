@@ -138,6 +138,8 @@ for c in pmData.clones:
 
     # Iterate through media sources
     for w, (ms, gc) in pmData.wells.items():
+        if debugOut:
+            printStatus('DEBUG: Processing {}\t{}\t{}\t{}.'.format(c, ms, gc, w))
         logData[c][w] = {}
         curves = pmData.getCloneReplicates(c, w, filterFlag)
 
@@ -148,6 +150,11 @@ for c in pmData.clones:
         if len(curves) > 0:
             gc = GrowthCurve.GrowthCurve(curves, pmData.time)
             logData[c][w] = gc
+            if debugOut:
+                msg = 'a={}, mgr={}, lag={}'.format(gc.asymptote,
+                                                    gc.maxGrowthRate,
+                                                    gc.lag)
+                printStatus('DEBUG: parameters for {} {}: {}'.format(c, w, msg))
 printStatus('Processing complete.')
 
 
@@ -156,6 +163,10 @@ printStatus('Processing complete.')
 ###############################################################################
 
 printStatus('Printing output files...')
+# Print out filtered data if set
+if filterFlag:
+    printFiltered(pmData)
+
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
 fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
@@ -181,7 +192,12 @@ for c, wellDict in logData.items():
     # Iterate through wells
     for w in sortW:
         w = "{}{}".format(w[0], w[1])
-        curve = wellDict[w]
+        try:
+            curve = wellDict[w]
+        except KeyError:
+            # KeyError occurs when all replicates were filtered out so does not
+            # exist in final hash
+            continue
         (ms, gc) = pmData.wells[w]
 
         # Print sample information
@@ -211,10 +227,6 @@ for c, wellDict in logData.items():
 fhInfo.close()
 fhLogCurve.close()
 fhMedCurve.close()
-
-# Print out filtered data if set
-if filterFlag:
-    printFiltered(pmData)
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')
