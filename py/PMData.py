@@ -64,8 +64,8 @@ class PMData:
         try:
             (cName, rep) = parsedName[0:2]
         except:
-            print(parsedName)
-            sys.exit(1)
+            cName = parsedName[0]
+            rep = "1"
 
         if cName not in self.clones:
             self.clones.append(cName)

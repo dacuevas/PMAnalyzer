@@ -43,6 +43,7 @@ class GrowthCurve:
         # Calculate max growth rate using a sliding window of 4 data points
         stop = len(self.time) - 4
         maxGR = 0
+        t = 0
         for idx in range(1, stop):
 
             # Growth rate calculation:

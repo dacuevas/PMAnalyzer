@@ -138,7 +138,6 @@ for c in pmData.clones:
 
     # Iterate through media sources
     for w, (ms, gc) in pmData.wells.items():
-        logData[c][w] = {}
         curves = pmData.getCloneReplicates(c, w, filterFlag)
 
         # Add curve to logData hash
@@ -146,6 +145,7 @@ for c in pmData.clones:
         # 1. Filtering is on
         # 2. All replicates were filtered out
         if len(curves) > 0:
+            logData[c][w] = {}
             gc = GrowthCurve.GrowthCurve(curves, pmData.time)
             logData[c][w] = gc
 printStatus('Processing complete.')
@@ -156,6 +156,11 @@ printStatus('Processing complete.')
 ###############################################################################
 
 printStatus('Printing output files...')
+
+# Print out filtered data if set
+if filterFlag:
+    printFiltered(pmData)
+
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
 fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
@@ -181,7 +186,10 @@ for c, wellDict in logData.items():
     # Iterate through wells
     for w in sortW:
         w = "{}{}".format(w[0], w[1])
-        curve = wellDict[w]
+        try:
+            curve = wellDict[w]
+        except KeyError:
+            continue
         (ms, gc) = pmData.wells[w]
 
         # Print sample information
@@ -212,9 +220,6 @@ fhInfo.close()
 fhLogCurve.close()
 fhMedCurve.close()
 
-# Print out filtered data if set
-if filterFlag:
-    printFiltered(pmData)
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')
