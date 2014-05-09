@@ -210,8 +210,9 @@ for c, wellDict in logData.items():
         mgr = curve.maxGrowthRate
         asymptote = curve.asymptote
         gLevel = curve.growthLevel
+        sse = curve.sse
         fhInfo.write('\t'.join(['{:.3f}'.format(x)
-                                for x in (lag, mgr, asymptote, gLevel)]))
+                                for x in (lag, mgr, asymptote, gLevel, sse)]))
         fhInfo.write('\n')
 
         # Print logistic curves

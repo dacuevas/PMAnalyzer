@@ -32,6 +32,7 @@ class GrowthCurve:
         self.dataLogistic = self.__logistic(self.time, self.asymptote,
                                             self.maxGrowthRate, self.lag)
         self.growthLevel = self.__calcGrowth()
+        self.sse = sum((self.dataLogistic - self.dataMed) ** 2)
 
     def __calcParameters(self, y0, t, raw):
         '''Perform curve-fitting optimization to obtain parameters'''
