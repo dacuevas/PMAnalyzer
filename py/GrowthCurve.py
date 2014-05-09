@@ -24,7 +24,7 @@ class GrowthCurve:
         self.time = time  # time values
         self.asymptote = self.__calcAsymptote()
         self.maxGrowthRate, self.mgrTime = self.__calcMGR()
-        self.dataLogistic, self.lag = self.__calcLag()
+        self.dataLogistic, self.lag, self.sse = self.__calcLag()
         self.growthLevel = self.__calcGrowth()
 
     def __calcAsymptote(self):
@@ -62,7 +62,7 @@ class GrowthCurve:
                                                 self.maxGrowthRate,
                                                 self.asymptote,
                                                 self.time).Logistic()
-        return logisticData, lag
+        return logisticData, lag, sseF
 
     def __calcGrowth(self):
         '''Calculate growth level using an adjusted harmonic mean'''

@@ -163,7 +163,7 @@ if filterFlag:
 
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
-fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
+fhInfo.write('sample\tmainsource\tsubstrate\twell\tsse\tlag\t')
 fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
 
 # logistic_curve file: logistic curves
@@ -202,8 +202,9 @@ for c, wellDict in logData.items():
         mgr = curve.maxGrowthRate
         asymptote = curve.asymptote
         gLevel = curve.growthLevel
+        sse = curve.sse
         fhInfo.write('\t'.join(['{:.3f}'.format(x)
-                                for x in (lag, mgr, asymptote, gLevel)]))
+                                for x in (sse, lag, mgr, asymptote, gLevel)]))
         fhInfo.write('\n')
 
         # Print logistic curves
