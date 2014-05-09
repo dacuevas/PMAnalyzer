@@ -170,7 +170,7 @@ if filterFlag:
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
 fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
-fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
+fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
 
 # logistic_curve file: logistic curves
 fhLogCurve = open('{}/logistic_curves_{}.txt'.format(outDir, outSuffix), 'w')
