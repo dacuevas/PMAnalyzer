@@ -50,7 +50,7 @@ class GrowthCurve:
 
     def __logisticSSE(self, params, t, y):
         a, mgr, l = params
-        return sum((self.__logistic(t, a, mgr, l) - y) ** 2)
+        return py.sum((self.__logistic(t, a, mgr, l) - y) ** 2)
 
     def __logistic(self, t, a, mgr, l):
         '''Logistic modeling'''
