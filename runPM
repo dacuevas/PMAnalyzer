@@ -95,7 +95,7 @@ hmFlag=""
 verboseFlag=""
 debugFlag=""
 num_replicates=1
-pythonexec="/usr/bin/python3.3"
+pythonexec="/usr/local/bin/python3.4"
 
 while [[ $# != 0 ]]; do
     case $1 in

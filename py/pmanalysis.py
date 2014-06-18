@@ -138,6 +138,9 @@ for c in pmData.clones:
 
     # Iterate through media sources
     for w, (ms, gc) in pmData.wells.items():
+        if debugOut:
+            printStatus('DEBUG: Processing {}\t{}\t{}\t{}.'.format(c, ms, gc, w))
+        logData[c][w] = {}
         curves = pmData.getCloneReplicates(c, w, filterFlag)
 
         # Add curve to logData hash
@@ -148,6 +151,11 @@ for c in pmData.clones:
             logData[c][w] = {}
             gc = GrowthCurve.GrowthCurve(curves, pmData.time)
             logData[c][w] = gc
+            if debugOut:
+                msg = 'a={}, mgr={}, lag={}'.format(gc.asymptote,
+                                                    gc.maxGrowthRate,
+                                                    gc.lag)
+                printStatus('DEBUG: parameters for {} {}: {}'.format(c, w, msg))
 printStatus('Processing complete.')
 
 
@@ -156,15 +164,14 @@ printStatus('Processing complete.')
 ###############################################################################
 
 printStatus('Printing output files...')
-
 # Print out filtered data if set
 if filterFlag:
     printFiltered(pmData)
 
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
-fhInfo.write('sample\tmainsource\tsubstrate\twell\tsse\tlag\t')
-fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
+fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
+fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
 
 # logistic_curve file: logistic curves
 fhLogCurve = open('{}/logistic_curves_{}.txt'.format(outDir, outSuffix), 'w')
@@ -189,6 +196,8 @@ for c, wellDict in logData.items():
         try:
             curve = wellDict[w]
         except KeyError:
+            # KeyError occurs when all replicates were filtered out so does not
+            # exist in final hash
             continue
         (ms, gc) = pmData.wells[w]
 
@@ -204,7 +213,7 @@ for c, wellDict in logData.items():
         gLevel = curve.growthLevel
         sse = curve.sse
         fhInfo.write('\t'.join(['{:.3f}'.format(x)
-                                for x in (sse, lag, mgr, asymptote, gLevel)]))
+                                for x in (lag, mgr, asymptote, gLevel, sse)]))
         fhInfo.write('\n')
 
         # Print logistic curves
@@ -220,7 +229,6 @@ for c, wellDict in logData.items():
 fhInfo.close()
 fhLogCurve.close()
 fhMedCurve.close()
-
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')

@@ -52,7 +52,7 @@ class PMData:
 
     def __parseHeader(self, ll):
         '''Header line contains data columns and time values'''
-        self.time = [float(x) for x in ll[4:]]
+        self.time = py.array([float(x) for x in ll[4:]])
 
     def __parseODCurve(self, ll):
         '''Growth curve parsing method'''
@@ -60,10 +60,11 @@ class PMData:
         (c, ms, gc, w) = ll[0:4]
 
         # Extract clone name and replicate name
+        # If no replicate name exists, assign it "1"
         parsedName = c.split('_')
         try:
             (cName, rep) = parsedName[0:2]
-        except:
+        except ValueError as e:
             cName = parsedName[0]
             rep = "1"
 
