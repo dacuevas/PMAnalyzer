@@ -38,7 +38,7 @@ class GrowthCurve:
         '''Perform curve-fitting optimization to obtain parameters'''
         try:
             results = optimize.minimize(self.__logisticSSE, y0, args=(t, raw),
-                                        bounds=((0.01, None),
+                                        bounds=((0.01, y0[0]),
                                                 (0, None),
                                                 (0, None)))
         except RuntimeError as e:
