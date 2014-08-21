@@ -4,12 +4,11 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
-# Updated on 15 Jan. 2014
+# Updated on 20 Aug. 2014
 
 
 import pylab as py
 import scipy.optimize as optimize
-import Models
 import sys
 
 
@@ -87,14 +86,6 @@ class GrowthCurve:
                 t = self.time[idx + 2]  # Midpoint time value
 
         return maxGR, t
-
-    def __calcLag(self):
-        '''Obtain the value of the lag phase using best fit model'''
-        logisticData, lag, sseF = Models.Models(self.dataMed, self.dataMed[1],
-                                                self.maxGrowthRate,
-                                                self.asymptote,
-                                                self.time).Logistic()
-        return logisticData, lag, sseF
 
     def __calcGrowth(self):
         '''Calculate growth level using an adjusted harmonic mean'''
