@@ -1,0 +1,96 @@
+A1	Nitrogen	Water	0.0
+A2	Nitrogen	Tyramine	0.04
+A3	Nitrogen	Uridine	0.04
+A4	Nitrogen	Inosine	0.04
+A5	Nitrogen	Histamine	0.04
+A6	Nitrogen	L-Pyro-Glutamic Acid	0.04
+A7	Nitrogen	Cytidine	0.04
+A8	Nitrogen	Adenosine-5-Monophosphate	0.04
+A9	Nitrogen	L-Arginine	0.04
+A10	Nitrogen	Thiourea	0.04
+A11	Nitrogen	Biuret	0.04
+A12	Nitrogen	Guanidine	0.04
+B1	Nitrogen	L-Histidine	0.04
+B2	Nitrogen	Thymine	0.04
+B3	Nitrogen	L-Glutathione	0.04
+B4	Nitrogen	Allantoin	0.04
+B5	Nitrogen	Adenine	0.04
+B6	Nitrogen	Glycine	0.04
+B7	Nitrogen	Beta-Phenylethylamine	0.04
+B8	Nitrogen	L-Proline	0.04
+B9	Nitrogen	D-Methionine	0.04
+B10	Nitrogen	Cytosine	0.04
+B11	Nitrogen	D-Valine	0.04
+B12	Nitrogen	N-Acetyl-D-Glucosamine	0.04
+C1	Nitrogen	L-Glutamic Acid	0.04
+C2	Nitrogen	L-Asparagine	0.04
+C3	Nitrogen	L-Alanine	0.04
+C4	Nitrogen	L-Methionine	0.04
+C5	Nitrogen	Ammonium Chloride	0.04
+C6	Nitrogen	L-Glutamine	0.04
+C7	Nitrogen	L-Cysteine	0.04
+C8	Nitrogen	L-Serine	0.04
+C9	Nitrogen	L-Threonine	0.04
+C10	Nitrogen	L-Leucine	0.04
+C11	Nitrogen	L-Lysine	0.04
+C12	Nitrogen	Acetamide	0.04
+D1	Nitrogen	D-Glutamic Acid	0.04
+D2	Nitrogen	D-Asparagine	0.04
+D3	Nitrogen	D-Alanine	0.04
+D4	Nitrogen	L-Tryptophan	0.04
+D5	Nitrogen	D-Aspartic Acid	0.04
+D6	Nitrogen	L-Phenylalanine	0.04
+D7	Nitrogen	D-Cysteine	0.04
+D8	Nitrogen	D-Serine	0.04
+D9	Nitrogen	L-Valine	0.04
+D10	Nitrogen	L-Isoleucine	0.04
+D11	Nitrogen	Tyrosine	0.04
+D12	Nitrogen	L-Citrulline	0.04
+E1	Nitrogen	L-Ornithine	0.04
+E2	Nitrogen	Putrescine	0.04
+E3	Nitrogen	D-Glucosamine	0.04
+E4	Nitrogen	2 Deoxy-D-Ribose	0.04
+E5	Nitrogen	Thymidine	0.04
+E6	Nitrogen	Gamma-Amino-N-Butyric Acid	0.04
+E7	Nitrogen	DL-Alpha-Amino-N-Butyric Acid	0.04
+E8	Nitrogen	Water	0.0
+E9	Nitrogen	Water	0.0
+E10	Nitrogen	Water	0.0
+E11	Nitrogen	Water	0.0
+E12	Nitrogen	Water	0.0
+F1	Sulfur	Water	0.0
+F2	Sulfur	L-Cysteine	0.006
+F3	Sulfur	L-Cysteic Acid	0.006
+F4	Sulfur	Glutathione	0.006
+F5	Sulfur	Thiourea	0.006
+F6	Sulfur	L-Djenkolic Acid	0.006
+F7	Sulfur	Acetyl Cysteine	0.006
+F8	Sulfur	1-Butane-Sulfonic Acid	0.006
+F9	Sulfur	Taurocholic Acid	0.006
+F10	Sulfur	Potassium-Tetra-Thionate	0.006
+F11	Sulfur	Magnesium Sulfate	0.006
+F12	Sulfur	Diethyl-Dithiophosphate	0.006
+G1	Sulfur	Water	0.0
+G2	Sulfur	D-Cysteine	0.006
+G3	Sulfur	Isethionic Acid	0.006
+G4	Sulfur	Sulfanic Acid	0.006
+G5	Sulfur	L-Methionine	0.006
+G6	Sulfur	Sodium Thiosulfate	0.006
+G7	Sulfur	DL-Ethionine	0.006
+G8	Sulfur	N-Acetyl-DL-Methionine	0.006
+G9	Sulfur	Methane Sulfonic Acid	0.006
+G10	Sulfur	D-Methionine	0.006
+G11	Sulfur	Taurine	0.006
+G12	Sulfur	N-Acetyl-L-Cysteine	0.006
+H1	Phosphorus	Water	0.0
+H2	Phosphorus	Diethyl-Dithiophosphate	0.025
+H3	Phosphorus	D-Glucose-6-Phosphate	0.025
+H4	Phosphorus	Adenosine-5-Monophosphate	0.025
+H5	Phosphorus	Sodium Pyrophosphate	0.025
+H6	Phosphorus	Sodium Thiophosphate	0.025
+H7	Phosphorus	Potassium phosphate	0.025
+H8	Phosphorus	DL-Alpha-Glycerophosphate	0.025
+H9	Phosphorus	Creatinephosphate	0.025
+H10	Phosphorus	Beta-Glycerophosphate	0.025
+H11	Phosphorus	Phosphono-Acetic Acid	0.025
+H12	Phosphorus	Water	0.0
