@@ -1,4 +1,10 @@
 #!/bin/bash
+# runPM
+# Automated bash script for running entire the phenotype microarray analysis
+#
+# Author: Daniel A Cuevas
+# Created on 22 Nov. 2013
+# Updated on 10 Apr. 2014
 
 usage() {
     echo "
@@ -11,17 +17,15 @@ Required
    OR
    -i [PM_data_directory]  : PM data directory path to files
    -n [output_directory]   : Output directory (will create if non-existent)
-   -o [output_name]        : Prefix prepended to all output files
-   -p [plate_filename]     : Tab-delimited plate filepath
+   -o [output_name]        : Suffix appended to all output files
+   -p [plate_filename]     : Plate filepath
    -r \"[regex]\"            : Regular expression to indicate clone names found in OD filenames (quotes around regex are recommended)
 
 Optional
-   --clear                 : Clear all intermediate files (except for input file into PManalysis)
    --debug                 : Print out debug messages
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
-   --hm                    : Use new harmonic mean calculation
-   --replicates            : Flag if there are replicates involved
+   --hm                    : Use new harmonic mean calculation (under development)
    -v                      : Verbose output
 
 " >&2
@@ -91,6 +95,7 @@ hmFlag=""
 verboseFlag=""
 debugFlag=""
 num_replicates=1
+pythonexec="/usr/local/bin/python3.4"
 
 while [[ $# != 0 ]]; do
     case $1 in
@@ -190,43 +195,22 @@ for f in ${inputfile[@]}; do
 done
 
 ################################################
-#BIOLOG PARSING PART 1
+#ANALYST PARSING
 ################################################
 
-parsedfiles=() # Will contain array of file names for next step
-
-# Iterate through files and produce first parsed version of each file
-getTime && echo "${currtime}    *****Parsing phase 1*****" >&1
-for f in ${inputfile[@]}; do
-    rname=$(echo "$f,$regex" | perl -ne 'chomp; ($f,$r)=split /,/; $f=~m/($r)/; print $1;')
-    f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
-    out="${rname}_${outputname}.txt"
-    parsedfiles=("${parsedfiles[@]}" "$outputdir/$out") # Append to array
-    cmd="${plscriptdir}/biologout_parse2 $inputfiledir/$f > $outputdir/${out}"
-    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
-    [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
-done
-
-
-################################################
-#BIOLOG PARSING PART 2
-################################################
-
-out="${outputname}_data.txt"
-cmd="${plscriptdir}/pm_data_organizer4 -p $plate -f ${parsedfiles[@]} -r $num_replicates > $outputdir/${out}"
-getTime && echo "${currtime}    *****Parsing phase 2*****" >&1
+getTime && echo "${currtime}    *****Parsing analyst files*****" >&1
+out="raw_curves_${outputname}.txt"
+cmd="${plscriptdir}/pmParser.pl -d $inputfiledir -p $plate > $outputdir/${out}"
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
-
 
 ################################################
 #ANALYSIS
 ################################################
 
 in="$outputdir/${out}"
-cmd="python ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
+cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
 getTime && echo "${currtime}    *****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd

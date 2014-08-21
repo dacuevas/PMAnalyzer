@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 05 Mar. 2014
+# Updated on 10 Apr. 2014
 
 import argparse
 import sys
@@ -12,6 +12,7 @@ import time
 import datetime
 import PMData
 import GrowthCurve
+import operator
 
 
 ###############################################################################
@@ -27,17 +28,17 @@ def timeStamp():
 
 def printStatus(msg):
     '''Print status message'''
-    print >> sys.stderr, timeStamp(), ' ', msg
+    print('{} {}'.format(timeStamp(), msg), file=sys.stderr)
     sys.stderr.flush()
 
 
-def curveFilter(clone, rep, source, cond, curve, pmData):
+def curveFilter(clone, rep, w, curve, pmData):
     '''Determine if growth curve passes filters'''
     ODmax = 0.18  # Maximum optical density in first two hours
     # Only check from 30 minute to 2 hour mark
     if [x for x in curve[1:5] if x >= ODmax]:
         # Set filter to True
-        pmData.setFilter(clone, rep, source, cond, True)
+        pmData.setFilter(clone, rep, w, True)
 
 
 def printFiltered(pmData):
@@ -47,17 +48,16 @@ def printFiltered(pmData):
     data = pmData.getFiltered()
     # filter_curve file: curves of filtered samples
     fhFilter = open('{}/filter_curves_{}.txt'.format(outDir, outSuffix), 'w')
-    fhFilter.write('sample\treplicate\tmainsource\tgrowthcondition\twell\t')
+    fhFilter.write('sample\treplicate\tmainsource\tsubstrate\twell\t')
     fhFilter.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
     fhFilter.write('\n')
     for tup in data:
         # Unpack tuple and obtain data
-        clone, source, cond, rep, od = tup
-        well = pmData.wells[source][cond]
+        clone, source, w, od = tup
+        (ms, gc) = pmData.wells[w]
 
         # Print sample information
-        fhFilter.write('{}\t{}\t{}\t{}\t{}\t'.format(clone, rep,
-                                                     source, cond, well))
+        fhFilter.write('{}\t{}\t{}\t{}\t{}\t'.format(clone, rep, ms, gc, w))
         # Print OD readings
         fhFilter.write('\t'.join(['{:.3f}'.format(x) for x in od]))
         fhFilter.write('\n')
@@ -104,11 +104,9 @@ if verbose:
     printStatus('Found {} samples and {} growth conditions.'.format(
         pmData.numClones, pmData.numConditions))
 if debugOut:
-    dbug_numReps = 0
-    for c in pmData.numReplicates:
-        dbug_numReps += pmData.numReplicates[c]
-
-    printStatus('DEBUG: Found {} replicates.'.format(dbug_numReps))
+    # Print out number of replicates for each clone
+    for c, reps in pmData.replicates.items():
+        printStatus('DEBUG: {} has {} replicates.'.format(c, len(reps)))
 
 
 # Perform filter
@@ -116,22 +114,16 @@ if filterFlag:
     printStatus('Performing filtering...')
     # Iterate through clones
     for c, repDict in pmData.dataHash.items():
-
         # Iterate through replicates
-        for rep, sDict in repDict.items():
-
-            # Iterate through media sources
-            for s, condDict in sDict.items():
-
-                # Iterate through growth condtions
-                for cond, odDict in condDict.items():
-
-                    # Perform filter check
-                    curveFilter(c, rep, s, cond, odDict['od'], pmData)
+        for rep, wellDict in repDict.items():
+            # Iterate through wells
+            for w, odDict in wellDict.items():
+                # Perform filter check
+                curveFilter(c, rep, w, odDict['od'], pmData)
 
     printStatus('Filtering complete.')
     if verbose:
-        printStatus('Filtered {} samples.'.format(pmData.numFiltered))
+        printStatus('Filtered {} growth curves.'.format(pmData.numFiltered))
 
 elif verbose:
     printStatus('Filtering option not given -- no filtering performed.')
@@ -145,20 +137,25 @@ for c in pmData.clones:
     logData[c] = {}
 
     # Iterate through media sources
-    for s, condList in pmData.conditions.items():
-        logData[c][s] = {}
+    for w, (ms, gc) in pmData.wells.items():
+        if debugOut:
+            printStatus('DEBUG: Processing {}\t{}\t{}\t{}.'.format(c, ms, gc, w))
+        logData[c][w] = {}
+        curves = pmData.getCloneReplicates(c, w, filterFlag)
 
-        # Iterate through growth conditions
-        for cond in condList:
-            curves = pmData.getCloneReplicates(c, s, cond, filterFlag)
-
-            # Add curve to logData hash
-            # Will not add if:
-            # 1. Filtering is on
-            # 2. All replicates were filtered out
-            if len(curves) > 0:
-                gc = GrowthCurve.GrowthCurve(curves, pmData.time)
-                logData[c][s][cond] = gc
+        # Add curve to logData hash
+        # Will not add if:
+        # 1. Filtering is on
+        # 2. All replicates were filtered out
+        if len(curves) > 0:
+            logData[c][w] = {}
+            gc = GrowthCurve.GrowthCurve(curves, pmData.time)
+            logData[c][w] = gc
+            if debugOut:
+                msg = 'a={}, mgr={}, lag={}'.format(gc.asymptote,
+                                                    gc.maxGrowthRate,
+                                                    gc.lag)
+                printStatus('DEBUG: parameters for {} {}: {}'.format(c, w, msg))
 printStatus('Processing complete.')
 
 
@@ -167,10 +164,14 @@ printStatus('Processing complete.')
 ###############################################################################
 
 printStatus('Printing output files...')
+# Print out filtered data if set
+if filterFlag:
+    printFiltered(pmData)
+
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
 fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
-fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
+fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
 
 # logistic_curve file: logistic curves
 fhLogCurve = open('{}/logistic_curves_{}.txt'.format(outDir, outSuffix), 'w')
@@ -184,47 +185,50 @@ fhMedCurve.write('sample\tmainsource\tsubstrate\twell\t')
 fhMedCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhMedCurve.write('\n')
 
+# Sort well numbers for print out
+ws = [(x[0], int(x[1:])) for x in pmData.wells.keys()]
+sortW = sorted(ws, key=operator.itemgetter(0, 1))
 # Iterate through clones
-for c, sourceDict in logData.items():
+for c, wellDict in logData.items():
+    # Iterate through wells
+    for w in sortW:
+        w = "{}{}".format(w[0], w[1])
+        try:
+            curve = wellDict[w]
+        except KeyError:
+            # KeyError occurs when all replicates were filtered out so does not
+            # exist in final hash
+            continue
+        (ms, gc) = pmData.wells[w]
 
-    # Iterate through media sources
-    for s, condDict in sourceDict.items():
+        # Print sample information
+        fhInfo.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhMedCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
 
-        # Iterate through growth conditions
-        for cond, curve in condDict.items():
-            w = pmData.wells[s][cond]
+        # Print OD readings
+        lag = curve.lag
+        mgr = curve.maxGrowthRate
+        asymptote = curve.asymptote
+        gLevel = curve.growthLevel
+        sse = curve.sse
+        fhInfo.write('\t'.join(['{:.3f}'.format(x)
+                                for x in (lag, mgr, asymptote, gLevel, sse)]))
+        fhInfo.write('\n')
 
-            # Print sample information
-            fhInfo.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
-            fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
-            fhMedCurve.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
+        # Print logistic curves
+        fhLogCurve.write('\t'.join(['{:.3f}'.format(x)
+                                    for x in curve.dataLogistic]))
+        fhLogCurve.write('\n')
 
-            # Print OD readings
-            lag = curve.lag
-            mgr = curve.maxGrowthRate
-            asymptote = curve.asymptote
-            gLevel = curve.growthLevel
-            fhInfo.write('\t'.join(['{:.3f}'.format(x)
-                                    for x in (lag, mgr, asymptote, gLevel)]))
-            fhInfo.write('\n')
-
-            # Print logistic curves
-            fhLogCurve.write('\t'.join(['{:.3f}'.format(x)
-                                        for x in curve.dataLogistic]))
-            fhLogCurve.write('\n')
-
-            # Print out median curve
-            fhMedCurve.write('\t'.join(['{:.3f}'.format(x)
-                                        for x in curve.dataMed]))
-            fhMedCurve.write('\n')
+        # Print out median curve
+        fhMedCurve.write('\t'.join(['{:.3f}'.format(x)
+                                    for x in curve.dataMed]))
+        fhMedCurve.write('\n')
 
 fhInfo.close()
 fhLogCurve.close()
 fhMedCurve.close()
-
-# Print out filtered data if set
-if filterFlag:
-    printFiltered(pmData)
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')
