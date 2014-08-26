@@ -3,7 +3,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 05 Mar. 2014
+# Updated on 26 Aug. 2014
 
 import pylab as py
 import sys
@@ -138,6 +138,10 @@ class PMData:
                                            py.array([currCurve])))
 
         return retArray
+
+    def getODCurve(self, clone, w, rep):
+        '''Retrieve a single OD curve'''
+        return self.dataHash[clone][rep][w]['od']
 
     def getFiltered(self):
         '''Retrieve array of all growth curves labeled as filtered'''

@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 10 Apr. 2014
+# Updated on 26 Aug. 2014
 
 import argparse
 import sys
@@ -13,6 +13,7 @@ import datetime
 import PMData
 import GrowthCurve
 import operator
+import pylab as py
 
 
 ###############################################################################
@@ -131,31 +132,50 @@ elif verbose:
 
 # Create growth curves and logistic models
 printStatus('Processing growth curves and creating logistic models...')
-logData = {}
+finalDataReps = {}
+finalDataMean = {}
 # Iterate through clones
 for c in pmData.clones:
-    logData[c] = {}
+    finalDataReps[c] = {}
+    finalDataMean[c] = {}
 
     # Iterate through media sources
     for w, (ms, gc) in pmData.wells.items():
-        if debugOut:
-            printStatus('DEBUG: Processing {}\t{}\t{}\t{}.'.format(c, ms, gc, w))
-        logData[c][w] = {}
-        curves = pmData.getCloneReplicates(c, w, filterFlag)
+        finalDataReps[c][w] = {}
+        finalDataMean[c][w] = {}
 
-        # Add curve to logData hash
-        # Will not add if:
-        # 1. Filtering is on
-        # 2. All replicates were filtered out
-        if len(curves) > 0:
-            logData[c][w] = {}
-            gc = GrowthCurve.GrowthCurve(curves, pmData.time)
-            logData[c][w] = gc
+        # Iterate through replicates and determine logistic parameters for each
+        tempRepData = py.array([], ndmin=2)
+        first = True
+        for rep in pmData.replicates[c]:
             if debugOut:
-                msg = 'a={}, mgr={}, lag={}'.format(gc.asymptote,
-                                                    gc.maxGrowthRate,
-                                                    gc.lag)
-                printStatus('DEBUG: parameters for {} {}: {}'.format(c, w, msg))
+                printStatus('DEBUG: Processing {}\t{}\t{}\t{}\t{}.'.format(c, rep, ms, gc, w))
+
+            # Create GrowthCurve object for sample
+            currCurve = pmData.getODCurve(c, w, rep)
+            gCurve = GrowthCurve.GrowthCurve(currCurve, pmData.time)
+
+            # Save sample GrowthCurve object for records
+            finalDataReps[c][w][rep] = gCurve
+
+            # Add to temporary multi-dim array for calculating mean
+            if first:
+                tempRepData = py.array([gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate,
+                                        gCurve.lag, gCurve.growthLevel], ndmin=2)
+                first = False
+            else:
+                add = [gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate, gCurve.lag, gCurve.growthLevel]
+                tempRepData = py.concatenate((tempRepData, [add]))
+
+            if debugOut:
+                msg = 'a={}, mgr={}, lag={}'.format(gCurve.asymptote,
+                                                    gCurve.maxGrowthRate,
+                                                    gCurve.lag)
+                printStatus('DEBUG: parameters for {} {} {}: {}'.format(c, rep, w, msg))
+        # Create mean logistic curve from replicates' parameters
+        meanParams = py.mean(tempRepData, axis=0)
+        finalDataMean[c][w]['curve'] = GrowthCurve.logistic(pmData.time, *meanParams[0:4])
+        finalDataMean[c][w]['params'] = meanParams
 printStatus('Processing complete.')
 
 
@@ -168,67 +188,102 @@ printStatus('Printing output files...')
 if filterFlag:
     printFiltered(pmData)
 
-# curveinfo file: curve parameters for each sample
-fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
-fhInfo.write('sample\tmainsource\tsubstrate\twell\tlag\t')
-fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
+# logistic_params_sample file: logistic curve parameters for each sample
+fhLPSample = open('{}/logistic_params_sample_{}.txt'.format(outDir, outSuffix), 'w')
+fhLPSample.write('sample\treplicate\tmainsource\tsubstrate\twell\ty0\tlag\t')
+fhLPSample.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
 
-# logistic_curve file: logistic curves
-fhLogCurve = open('{}/logistic_curves_{}.txt'.format(outDir, outSuffix), 'w')
-fhLogCurve.write('sample\tmainsource\tsubstrate\twell\t')
-fhLogCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
-fhLogCurve.write('\n')
+# logistic_curves_sample file: logistic curves for each sample
+fhLCSample = open('{}/logistic_curves_sample_{}.txt'.format(outDir, outSuffix), 'w')
+fhLCSample.write('sample\treplicate\tmainsource\tsubstrate\twell\t')
+fhLCSample.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
+fhLCSample.write('\n')
 
-# median file: median curves
-fhMedCurve = open('{}/median_curves_{}.txt'.format(outDir, outSuffix), 'w')
-fhMedCurve.write('sample\tmainsource\tsubstrate\twell\t')
-fhMedCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
-fhMedCurve.write('\n')
+# logistic_params_mean file. logistic curve parameters (mean)
+fhLPMean = open('{}/logistic_params_mean_{}.txt'.format(outDir, outSuffix), 'w')
+fhLPMean.write('sample\tmainsource\tsubstrate\twell\ty0\tlag\t')
+fhLPMean.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
+
+
+# logistic_curves_mean file. logistic curve (mean)
+fhLCMean = open('{}/logistic_curves_mean_{}.txt'.format(outDir, outSuffix), 'w')
+fhLCMean.write('sample\tmainsource\tsubstrate\twell\t')
+fhLCMean.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
+fhLCMean.write('\n')
 
 # Sort well numbers for print out
 ws = [(x[0], int(x[1:])) for x in pmData.wells.keys()]
 sortW = sorted(ws, key=operator.itemgetter(0, 1))
 # Iterate through clones
-for c, wellDict in logData.items():
+for c, wellDict in finalDataReps.items():
     # Iterate through wells
     for w in sortW:
         w = "{}{}".format(w[0], w[1])
+        (ms, gc) = pmData.wells[w]
+
+        # Process mean information
         try:
-            curve = wellDict[w]
+            curr = finalDataMean[c][w]
         except KeyError:
             # KeyError occurs when all replicates were filtered out so does not
             # exist in final hash
             continue
-        (ms, gc) = pmData.wells[w]
 
         # Print sample information
-        fhInfo.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
-        fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
-        fhMedCurve.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhLPMean.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhLCMean.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
 
-        # Print OD readings
-        lag = curve.lag
-        mgr = curve.maxGrowthRate
-        asymptote = curve.asymptote
-        gLevel = curve.growthLevel
-        sse = curve.sse
-        fhInfo.write('\t'.join(['{:.3f}'.format(x)
-                                for x in (lag, mgr, asymptote, gLevel, sse)]))
-        fhInfo.write('\n')
+        # Print parameters
+        curve = curr['curve']
+        y0 = curr['params'][0]
+        asymptote = curr['params'][1]
+        mgr = curr['params'][2]
+        lag = curr['params'][3]
+        gLevel = curr['params'][4]
+        fhLPMean.write('\t'.join(['{:.3f}'.format(x)
+                                  for x in (y0, lag, mgr, asymptote, gLevel)]))
+        fhLPMean.write('\n')
 
-        # Print logistic curves
-        fhLogCurve.write('\t'.join(['{:.3f}'.format(x)
-                                    for x in curve.dataLogistic]))
-        fhLogCurve.write('\n')
+        # Print logistic curve
+        fhLCMean.write('\t'.join(['{:.3f}'.format(x)
+                                  for x in curve]))
+        fhLCMean.write('\n')
 
-        # Print out median curve
-        fhMedCurve.write('\t'.join(['{:.3f}'.format(x)
-                                    for x in curve.dataMed]))
-        fhMedCurve.write('\n')
+        # Iterate through replicates
+        for rep in pmData.replicates[c]:
+            try:
+                curve = wellDict[w][rep]
+            except KeyError:
+                # KeyError occurs when replicate was filtered out so does not
+                # exist in final hash
+                continue
 
-fhInfo.close()
-fhLogCurve.close()
-fhMedCurve.close()
+            # Print sample information
+            fhLPSample.write('{}\t{}\t{}\t{}\t{}\t'.format(c, rep, ms, gc, w))
+            fhLCSample.write('{}\t{}\t{}\t{}\t{}\t'.format(c, rep, ms, gc, w))
+
+            # Print parameters
+            y0 = curve.y0
+            lag = curve.lag
+            mgr = curve.maxGrowthRate
+            asymptote = curve.asymptote
+            gLevel = curve.growthLevel
+            sse = curve.sse
+            fhLPSample.write('\t'.join(['{:.3f}'.format(x)
+                                    for x in (y0, lag, mgr, asymptote,
+                                              gLevel, sse)]))
+            fhLPSample.write('\n')
+
+            # Print logistic curve
+            fhLCSample.write('\t'.join(['{:.3f}'.format(x)
+                                        for x in curve.dataLogistic]))
+            fhLCSample.write('\n')
+
+
+fhLPSample.close()
+fhLCSample.close()
+fhLPMean.close()
+fhLCMean.close()
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')

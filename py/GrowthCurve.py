@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
-# Updated on 20 Aug. 2014
+# Updated on 26 Aug. 2014
 
 
 import pylab as py
@@ -21,17 +21,18 @@ class GrowthCurve:
         #              This is important for determining the median
 
         self.dataReps = data  # OD data values (replicates implied)
-        self.dataMed = py.median(self.dataReps, axis=0)
+        #self.dataMed = py.median(self.dataReps, axis=0)
         self.time = time  # time values
+        self.y0 = self.dataReps[1]
         self.asymptote = self.__calcAsymptote()
         self.maxGrowthRate, self.mgrTime = self.__calcMGR()
         self.asymptote, self.maxGrowthRate, self.lag = self.__calcParameters(
-            (self.asymptote, self.maxGrowthRate, 0.5), self.time, self.dataMed)
+            (self.asymptote, self.maxGrowthRate, 0.5), self.time, self.dataReps)
 
-        self.dataLogistic = self.__logistic(self.time, self.asymptote,
-                                            self.maxGrowthRate, self.lag)
+        self.dataLogistic = logistic(self.y0, self.time,
+                                     self.asymptote, self.maxGrowthRate, self.lag)
         self.growthLevel = self.__calcGrowth()
-        self.sse = sum((self.dataLogistic - self.dataMed) ** 2)
+        self.sse = sum((self.dataLogistic - self.dataReps) ** 2)
 
     def __calcParameters(self, y0, t, raw):
         '''Perform curve-fitting optimization to obtain parameters'''
@@ -42,21 +43,14 @@ class GrowthCurve:
                                                 (0, None)))
         except RuntimeError as e:
             print(e)
-            print(self.dataMed)
+            print(self.dataReps)
             sys.exit(1)
 
         return results.x
 
     def __logisticSSE(self, params, t, y):
         a, mgr, l = params
-        return py.sum((self.__logistic(t, a, mgr, l) - y) ** 2)
-
-    def __logistic(self, t, a, mgr, l):
-        '''Logistic modeling'''
-        startOD = self.dataMed[1]
-        lg = startOD + ((a - startOD) /
-                        (1 + py.exp((((mgr / a) * (l - t)) + 2))))
-        return lg
+        return py.sum((logistic(t, self.y0, a, mgr, l) - y) ** 2)
 
     def __calcAsymptote(self):
         '''Obtain the value of the highest OD reading'''
@@ -64,7 +58,7 @@ class GrowthCurve:
         stop = len(self.time) - 3
         maxA = -1
         for idx in range(1, stop):
-            av = py.mean(self.dataMed[idx:idx + 3])
+            av = py.mean(self.dataReps[idx:idx + 3])
             if av > maxA:
                 maxA = av
         return maxA
@@ -79,7 +73,7 @@ class GrowthCurve:
 
             # Growth rate calculation:
             # (log(i+3) - log(i)) / (time(i+3) - time(i))
-            gr = ((py.log(self.dataMed[idx + 3]) - py.log(self.dataMed[idx])) /
+            gr = ((py.log(self.dataReps[idx + 3]) - py.log(self.dataReps[idx])) /
                   (self.time[idx + 3] - self.time[idx]))
             if idx == 1 or gr > maxGR:
                 maxGR = gr
@@ -91,3 +85,11 @@ class GrowthCurve:
         '''Calculate growth level using an adjusted harmonic mean'''
         return len(self.dataLogistic) / py.sum((1 / (self.dataLogistic +
                                                      self.asymptote)))
+
+
+def logistic(t, y0, a, mgr, l):
+    '''Logistic modeling'''
+    startOD = y0
+    lg = startOD + ((a - startOD) /
+                    (1 + py.exp((((mgr / a) * (l - t)) + 2))))
+    return lg
