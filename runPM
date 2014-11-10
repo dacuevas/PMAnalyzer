@@ -10,7 +10,7 @@ usage() {
     echo "
 usage: $scriptname -c config_filename [Options]
 OR
-usage: $scriptname -i PM_data_directory -n output_directory -o output_name -p plate_filename -r \"regex\" [Options]
+usage: $scriptname -i PM_data_directory -n output_directory -o output_name [Options]
 
 Required
    -c [config_filename]    : Configuration file listing all parameters (this takes precedence)
@@ -18,14 +18,12 @@ Required
    -i [PM_data_directory]  : PM data directory path to files
    -n [output_directory]   : Output directory (will create if non-existent)
    -o [output_name]        : Suffix appended to all output files
-   -p [plate_filename]     : Plate filepath
-   -r \"[regex]\"            : Regular expression to indicate clone names found in OD filenames (quotes around regex are recommended)
 
 Optional
    --debug                 : Print out debug messages
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
-   --hm                    : Use new harmonic mean calculation (under development)
+   -p [plate_filename]     : Plate filepath
    -v                      : Verbose output
 
 " >&2
@@ -140,11 +138,6 @@ while [[ $# != 0 ]]; do
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -p value" >&2 && usage && exit 2
         plate=$1
         ;;
-    -r)
-        shift
-        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -r value" >&2 && usage && exit 2
-        regex=$1
-        ;;
     --replicates)
         num_replicates=2
         ;;
@@ -168,9 +161,7 @@ fi
 # Check if required variables are set
 if [[ ! $inputfiledir ||
     ! $outputname ||
-    ! $plate ||
-    ! $outputdir ||
-    ! $regex ]]; then
+    ! $outputdir ]]; then
     usage
     exit 2
 fi
@@ -200,7 +191,12 @@ done
 
 getTime && echo "${currtime}    *****Parsing analyst files*****" >&1
 out="raw_curves_${outputname}.txt"
-cmd="${plscriptdir}/pmParser.pl -d $inputfiledir -p $plate > $outputdir/${out}"
+# Check if plate was supplied
+if [[ $plate ]]; then
+    cmd="${plscriptdir}/pmParser.pl -d $inputfiledir -p $plate > $outputdir/${out}"
+else
+    cmd="${plscriptdir}/pmParser.pl -d $inputfiledir > $outputdir/${out}"
+fi
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
@@ -210,7 +206,11 @@ eval $cmd
 ################################################
 
 in="$outputdir/${out}"
-cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
+if [[ $plate ]]; then
+    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
+else
+    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname -p $filterflag $hmFlag $verboseFlag $debugFlag"
+fi
 getTime && echo "${currtime}    *****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd

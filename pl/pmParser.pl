@@ -1,11 +1,17 @@
 #!/usr/bin/perl
+# pmParser.pl
+# Parsing script for GT Analyst multi-plate
+# spectrophotometer
+#
+# Author: Daniel A Cuevas
+# Created on 22 Nov. 2013
+# Updated on 10 Nov. 2014
 
 use warnings;
 use strict;
 use Date::Parse;
 use File::Basename;
 use Getopt::Long;
-use Statistics::Basic qw(median mean);
 
 
 ################################################
@@ -167,6 +173,7 @@ sub readData {
 # hash. This hash will not have a replicates key.
 ###
 sub calcMedian {
+    use Statistics::Basic qw(median);
     my ($data) = @_;
     my $newdata = {};
     foreach my $c ( keys %$data ) {
@@ -211,6 +218,7 @@ sub calcMedian {
 # hash. This hash will not have a replicates key.
 ###
 sub calcMean {
+    use Statistics::Basic qw(mean);
     my ($data) = @_;
     my $newdata = {};
     foreach my $c ( keys %$data ) {
@@ -345,12 +353,15 @@ else {
     &usage("Data directory does not exist") unless ! $opts->{dir} || -e  $opts->{dir};
     opendir(DIR, $opts->{dir}) or &usage("Couldn't open $opts->{dir} to read files");
     while( my $f = readdir(DIR) ) {
+        # Skip directories beginning with "\."
         next if $f =~ m/^\./;
         push(@filepaths, "$opts->{dir}/$f");
     }
     # Check if directory was empty
     &usage("Directory empty given") if $#filepaths == 0;
 }
+
+# Check that files actually exist
 &checkFiles(\@filepaths) || &usage("File(s) does not exist");
 
 # Check if plate file exists
@@ -376,7 +387,7 @@ foreach my $f ( @filepaths ) {
     &readData($f, $data, $opts->{reps}, \@time);
 }
 
-# If replicates exist, calculate median
+# If replicates exist, calculate median or mean
 $data = !$opts->{reps}  ? $data
         : $opts->{mean} ? &calcMean($data)
         :                 &calcMedian($data);

@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 26 Aug. 2014
+# Updated on 10 Nov. 2014
 
 import argparse
 import sys
@@ -83,6 +83,8 @@ parser.add_argument('-g', '--newgrowth', action='store_true',
                     help='Apply new growth level calculation')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='Increase output for status messages')
+parser.add_argument('-p', '--noplate', action='store_true',
+                    help='Input wells are not based on a plate')
 
 args = parser.parse_args()
 inputFile = args.infile
@@ -92,6 +94,7 @@ filterFlag = args.filter
 newGrowthFlag = args.newgrowth
 verbose = args.verbose
 debugOut = args.debug
+noPlate = args.noplate
 
 ###############################################################################
 # Data Processing
@@ -99,11 +102,15 @@ debugOut = args.debug
 
 # Parse data file
 printStatus('Parsing input file...')
-pmData = PMData.PMData(inputFile)
+pmData = PMData.PMData(inputFile, noPlate)
 printStatus('Parsing complete.')
 if verbose:
-    printStatus('Found {} samples and {} growth conditions.'.format(
-        pmData.numClones, pmData.numConditions))
+    if noPlate:
+        printStatus('Plate option not given.')
+        printStatus('Found {} samples.'.format(pmData.numClones))
+    else:
+        printStatus('Found {} samples and {} growth conditions.'.format(
+            pmData.numClones, pmData.numConditions))
 if debugOut:
     # Print out number of replicates for each clone
     for c, reps in pmData.replicates.items():
@@ -140,7 +147,10 @@ for c in pmData.clones:
     finalDataMean[c] = {}
 
     # Iterate through media sources
-    for w, (ms, gc) in pmData.wells.items():
+    for w in pmData.wells:
+        if not noPlate:
+            (ms, gc) = pmData.wells[w]
+
         finalDataReps[c][w] = {}
         finalDataMean[c][w] = {}
 
@@ -148,7 +158,9 @@ for c in pmData.clones:
         tempRepData = py.array([], ndmin=2)
         first = True
         for rep in pmData.replicates[c]:
-            if debugOut:
+            if debugOut and noPlate:
+                printStatus('DEBUG: Processing {}\t{}\t{}.'.format(c, rep, w))
+            elif debugOut:
                 printStatus('DEBUG: Processing {}\t{}\t{}\t{}\t{}.'.format(c, rep, ms, gc, w))
 
             # Create GrowthCurve object for sample
@@ -188,38 +200,51 @@ printStatus('Printing output files...')
 if filterFlag:
     printFiltered(pmData)
 
+# Print out plate info accordingly
+if noPlate:
+    plateInfo = 'well'
+else:
+    plateInfo = 'mainsource\tsubstrate\twell'
+
 # logistic_params_sample file: logistic curve parameters for each sample
 fhLPSample = open('{}/logistic_params_sample_{}.txt'.format(outDir, outSuffix), 'w')
-fhLPSample.write('sample\treplicate\tmainsource\tsubstrate\twell\ty0\tlag\t')
+fhLPSample.write('sample\treplicate\t{}\ty0\tlag\t'.format(plateInfo))
 fhLPSample.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
 
 # logistic_curves_sample file: logistic curves for each sample
 fhLCSample = open('{}/logistic_curves_sample_{}.txt'.format(outDir, outSuffix), 'w')
-fhLCSample.write('sample\treplicate\tmainsource\tsubstrate\twell\t')
+fhLCSample.write('sample\treplicate\t{}\t'.format(plateInfo))
 fhLCSample.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLCSample.write('\n')
 
 # logistic_params_mean file. logistic curve parameters (mean)
 fhLPMean = open('{}/logistic_params_mean_{}.txt'.format(outDir, outSuffix), 'w')
-fhLPMean.write('sample\tmainsource\tsubstrate\twell\ty0\tlag\t')
+fhLPMean.write('sample\t{}\ty0\tlag\t'.format(plateInfo))
 fhLPMean.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
 
 
 # logistic_curves_mean file. logistic curve (mean)
 fhLCMean = open('{}/logistic_curves_mean_{}.txt'.format(outDir, outSuffix), 'w')
-fhLCMean.write('sample\tmainsource\tsubstrate\twell\t')
+fhLCMean.write('sample\t{}\t'.format(plateInfo))
 fhLCMean.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLCMean.write('\n')
 
 # Sort well numbers for print out
-ws = [(x[0], int(x[1:])) for x in pmData.wells.keys()]
+if noPlate:
+    ws = [(x[0], int(x[1:])) for x in pmData.wells]
+else:
+    ws = [(x[0], int(x[1:])) for x in pmData.wells.keys()]
 sortW = sorted(ws, key=operator.itemgetter(0, 1))
 # Iterate through clones
 for c, wellDict in finalDataReps.items():
     # Iterate through wells
     for w in sortW:
         w = "{}{}".format(w[0], w[1])
-        (ms, gc) = pmData.wells[w]
+        if noPlate:
+            pInfo = w
+        else:
+            (ms, gc) = pmData.wells[w]
+            pInfo = '{}\t{}\t{}'.format(ms, gc, w)
 
         # Process mean information
         try:
@@ -230,8 +255,8 @@ for c, wellDict in finalDataReps.items():
             continue
 
         # Print sample information
-        fhLPMean.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
-        fhLCMean.write('{}\t{}\t{}\t{}\t'.format(c, ms, gc, w))
+        fhLPMean.write('{}\t{}\t'.format(c, pInfo))
+        fhLCMean.write('{}\t{}\t'.format(c, pInfo))
 
         # Print parameters
         curve = curr['curve']
@@ -259,8 +284,8 @@ for c, wellDict in finalDataReps.items():
                 continue
 
             # Print sample information
-            fhLPSample.write('{}\t{}\t{}\t{}\t{}\t'.format(c, rep, ms, gc, w))
-            fhLCSample.write('{}\t{}\t{}\t{}\t{}\t'.format(c, rep, ms, gc, w))
+            fhLPSample.write('{}\t{}\t{}\t'.format(c, rep, pInfo))
+            fhLCSample.write('{}\t{}\t{}\t'.format(c, rep, pInfo))
 
             # Print parameters
             y0 = curve.y0

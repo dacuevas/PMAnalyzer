@@ -3,7 +3,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 26 Aug. 2014
+# Updated on 10 Nov. 2014
 
 import pylab as py
 import sys
@@ -11,14 +11,18 @@ import sys
 
 class PMData:
     '''Class for parsing phenotype microarray data'''
-    def __init__(self, filepath):
+    def __init__(self, filepath, noPlate):
         self.filepath = filepath
         self.numClones = 0
         self.numConditions = 0
         self.numFiltered = 0
+        self.noPlate = noPlate
         self.replicates = {}  # Hash of clone->[reps]
         self.clones = []  # Set of unique clone names
-        self.wells = {}  # Hash of well->(mainsource, condition)
+        if noPlate:
+            self.wells = set([]) # Set of wells
+        else:
+            self.wells = {}  # Hash of well->(mainsource, condition)
         self.time = []  # Array of time values
 
         # Primary data structure to access data
@@ -52,12 +56,23 @@ class PMData:
 
     def __parseHeader(self, ll):
         '''Header line contains data columns and time values'''
-        self.time = py.array([float(x) for x in ll[4:]])
+        if self.noPlate:
+            self.time = py.array([float(x) for x in ll[2:]])
+        else:
+            self.time = py.array([float(x) for x in ll[4:]])
 
     def __parseODCurve(self, ll):
         '''Growth curve parsing method'''
         # Extract curve info
-        (c, ms, gc, w) = ll[0:4]
+        if self.noPlate:
+            (c, w) = ll[0:2]
+            curve = py.array([float(x) for x in ll[2:]])
+            self.wells.add(w)
+        else:
+            (c, ms, gc, w) = ll[0:4]
+            # Add well info
+            self.wells[w] = (ms, gc)
+            curve = py.array([float(x) for x in ll[4:]])
 
         # Extract clone name and replicate name
         # If no replicate name exists, assign it "1"
@@ -76,9 +91,6 @@ class PMData:
         if rep not in self.replicates[cName]:
             self.replicates[cName].append(rep)
 
-        # Add well info
-        self.wells[w] = (ms, gc)
-
         # Add curve to primary data hash
         # Initialize data hash when needed
         try:
@@ -90,7 +102,6 @@ class PMData:
         except KeyError:
             self.dataHash[cName][rep] = {}
 
-        curve = py.array([float(x) for x in ll[4:]])
         self.dataHash[cName][rep][w] = {'od': curve, 'filter': False}
 
     def __QACheck(self):
@@ -100,13 +111,19 @@ class PMData:
         for clone, repDict in self.dataHash.items():
             for rep, wellDict in repDict.items():
                 for w, odDict in wellDict.items():
-                    (ms, gc) = self.wells[w]
                     # Find number of values in growth curve
                     numVals = len(odDict['od'])
                     if numVals != numTime:
-                        problems.append([clone, rep, ms, gc, w,
-                                        'time:{}\tcurve:{}'.format(
-                                            numTime, numVals)])
+                        if self.noPlate:
+                            problems.append([clone, rep, w,
+                                            'time:{}\tcurve:{}'.format(
+                                                numTime, numVals)])
+
+                        else:
+                            (ms, gc) = self.wells[w]
+                            problems.append([clone, rep, ms, gc, w,
+                                            'time:{}\tcurve:{}'.format(
+                                                numTime, numVals)])
 
         # Print out issues
         for p in problems:
