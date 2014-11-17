@@ -14,6 +14,8 @@ import PMData
 import GrowthCurve
 import operator
 import pylab as py
+import matplotlib.pyplot as plt
+import pprint
 
 
 ###############################################################################
@@ -63,6 +65,50 @@ def printFiltered(pmData):
         fhFilter.write('\t'.join(['{:.3f}'.format(x) for x in od]))
         fhFilter.write('\n')
     fhFilter.close()
+
+
+def printHeatMap(data, clones, wells, plateInfo=False):
+    '''Make growth heatmap after curve fitting and analysis'''
+    #finalDataMean[c][w]['params'] = meanParams
+    #        else:
+    #            retArray = py.concatenate((retArray,
+    #                                       py.array([currCurve])))
+    if plateInfo:
+        xlabels = [x[1] for x in [pmData.wells['{}{}'.format(w[0], w[1])] for w in wells]]
+    else:
+        xlabels = ['{}{}'.format(w[0], w[1]) for w in wells]
+    first = True
+    for clone in clones:
+        tmpArr = []
+        for well in wells:
+            w = '{}{}'.format(well[0], well[1])
+            tmpArr.append(data[clone][w]['params'][4])
+
+        if first:
+            plotData = py.array(tmpArr, ndmin=2)
+            first = False
+        else:
+            plotData = py.concatenate((plotData, [tmpArr]))
+
+    fig, ax = plt.subplots()
+    hm = ax.pcolor(plotData, cmap=plt.cm.Blues, edgecolor='black')
+    fig.colorbar(hm)
+
+    width = 15
+    height = len(clones)
+    if height > 12:
+        height = 12
+    fig.set_size_inches(width,height)
+
+    # Check size
+    # INSERT HERE
+    ax.xaxis.set(ticks=py.arange(0.5, len(xlabels)), ticklabels=xlabels)
+    ax.yaxis.set(ticks=py.arange(0.5, len(clones)), ticklabels=clones)
+    ax.set_xticklabels(labels=xlabels, rotation=90)
+    plt.savefig('growthlevels.png', dpi=100)
+
+
+
 
 
 ###############################################################################
@@ -304,7 +350,7 @@ for c, wellDict in finalDataReps.items():
                                         for x in curve.dataLogistic]))
             fhLCSample.write('\n')
 
-
+printHeatMap(finalDataMean, pmData.clones, sortW)
 fhLPSample.close()
 fhLCSample.close()
 fhLPMean.close()
