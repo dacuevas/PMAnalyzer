@@ -67,16 +67,16 @@ def printFiltered(pmData):
     fhFilter.close()
 
 
-def printHeatMap(data, clones, wells, plateInfo=False):
+def printHeatMap(data, clones, wells, outDir, plateInfo=False):
     '''Make growth heatmap after curve fitting and analysis'''
     #finalDataMean[c][w]['params'] = meanParams
     #        else:
     #            retArray = py.concatenate((retArray,
     #                                       py.array([currCurve])))
     if plateInfo:
-        xlabels = [x[1] for x in [pmData.wells['{}{}'.format(w[0], w[1])] for w in wells]]
+        newWells = [x[1] for x in [pmData.wells['{}{}'.format(w[0], w[1])] for w in wells]]
     else:
-        xlabels = ['{}{}'.format(w[0], w[1]) for w in wells]
+        newWells = ['{}{}'.format(w[0], w[1]) for w in wells]
     first = True
     for clone in clones:
         tmpArr = []
@@ -90,22 +90,68 @@ def printHeatMap(data, clones, wells, plateInfo=False):
         else:
             plotData = py.concatenate((plotData, [tmpArr]))
 
-    fig, ax = plt.subplots()
-    hm = ax.pcolor(plotData, cmap=plt.cm.Blues, edgecolor='black')
-    fig.colorbar(hm)
 
-    width = 15
+    ######################################################
+    # Plotting
+    ######################################################
+    numClones = len(clones)
+    numWells = len(newWells)
+
+    # Width is 15 inches
+    # All measurements are in inches
+    width = 15;
+
+    # Height determined by number of clones
+    # Cap at 12 inches
     height = len(clones)
     if height > 12:
         height = 12
+
+    # Fontsize of x axis determined by
+    # number of wells on x axsis
+    # 13 was determined by trial and error
+    if numWells > 13:
+        xfontsize = numWells / 13
+    else:
+        xfontsize = 10
+    yfontsize = 10
+
+    # Create figure and axis
+    fig, ax = plt.subplots()
     fig.set_size_inches(width,height)
 
-    # Check size
-    # INSERT HERE
-    ax.xaxis.set(ticks=py.arange(0.5, len(xlabels)), ticklabels=xlabels)
-    ax.yaxis.set(ticks=py.arange(0.5, len(clones)), ticklabels=clones)
-    ax.set_xticklabels(labels=xlabels, rotation=90)
-    plt.savefig('growthlevels.png', dpi=100)
+    # Create heatmap object using pcolor
+    hm = ax.pcolor(plotData, cmap=plt.cm.Greys, edgecolor='black', vmin=0, vmax=1.5)
+
+    # Create color bar legend
+    mini = py.amin(plotData)
+    maxi = py.amax(plotData)
+    cbticks = [mini, maxi, 0.25, 0.75]
+    cblabs = ['min', 'max', 'no growth', 'growth']
+    cbticks, cblabs = zip(*sorted(zip(cbticks, cblabs)))
+    cbar = fig.colorbar(hm, orientation='horizontal')
+    cbar.set_ticks(cbticks)
+    cbar.set_ticklabels(cblabs)
+
+
+    # Move x axis to top
+    ax.xaxis.tick_top()
+    ax.yaxis.tick_left()
+
+    # Align x and y tick marks to center of cells
+    ax.set_xticks(py.arange(0, numWells)+0.5)
+    ax.set_yticks(py.arange(0, numClones)+0.5)
+
+    # Set tick labels
+    ax.set_xticklabels(labels=newWells, minor=False, rotation=90, fontsize=xfontsize)
+    ax.set_yticklabels(labels=clones, minor=False)
+    ax.axis('tight')
+    # Remove tick marks lines
+    plt.tick_params(axis='both', left='off', right='off', bottom='off', top='off')
+
+    plt.savefig('{}/growthlevels.png'.format(outDir), dpi=100, bbox_inches='tight')
+
+
 
 
 
@@ -131,6 +177,8 @@ parser.add_argument('-v', '--verbose', action='store_true',
                     help='Increase output for status messages')
 parser.add_argument('-p', '--noplate', action='store_true',
                     help='Input wells are not based on a plate')
+parser.add_argument('-m', '--heatmap', action='store_true',
+                    help='Create growth level heatmap')
 
 args = parser.parse_args()
 inputFile = args.infile
@@ -141,6 +189,7 @@ newGrowthFlag = args.newgrowth
 verbose = args.verbose
 debugOut = args.debug
 noPlate = args.noplate
+hmap = args.heatmap
 
 ###############################################################################
 # Data Processing
@@ -350,11 +399,12 @@ for c, wellDict in finalDataReps.items():
                                         for x in curve.dataLogistic]))
             fhLCSample.write('\n')
 
-printHeatMap(finalDataMean, pmData.clones, sortW)
 fhLPSample.close()
 fhLCSample.close()
 fhLPMean.close()
 fhLCMean.close()
+if hmap:
+    printHeatMap(finalDataMean, pmData.clones, sortW, outDir)
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')
