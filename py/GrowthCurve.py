@@ -86,6 +86,7 @@ class GrowthCurve:
 def logistic(t, y0, a, mgr, l):
     '''Logistic modeling'''
     startOD = y0
+    exponent = ((mgr / a) * (l - t)) + 2
     lg = startOD + ((a - startOD) /
-                    (1 + py.exp((((mgr / a) * (l - t)) + 2))))
+                    (1 + py.exp(exponent)))
     return lg

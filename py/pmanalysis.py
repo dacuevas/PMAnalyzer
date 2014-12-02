@@ -152,7 +152,32 @@ def printHeatMap(data, clones, wells, outDir, plateInfo=False):
     plt.savefig('{}/growthlevels.png'.format(outDir), dpi=100, bbox_inches='tight')
 
 
-
+def curvePlot(data, wells, time):
+    '''Plot growth curve plots on multi-faceted figure. Separate graphs based on well.
+    Plot clone replicates together.'''
+    f, axarr = plt.subplots(8, 12)
+    colors = ['r', 'b', 'g']
+    for idx, w in enumerate(wells):
+        w = "{}{}".format(w[0], w[1])
+        row = int(py.floor(idx / 12))
+        col = (idx % 12)
+        for c in data:
+            shapes = ['--', '*--', '.--']
+            for cidx, rep in enumerate(data[c][w]):
+                clr = colors[(cidx % 3)]
+                shp = shapes[(cidx % 3)]
+                curve = data[c][w][rep].rawcurve
+                axarr[row, col].plot(time, curve, '{}{}'.format(clr, shp), linewidth=1.5)
+                # Only plot tick marks on first column and last row
+                if col != 0:
+                    axarr[row, col].set_yticks([])
+                if row != 7:
+                    axarr[row, col].set_xticks([])
+                axarr[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
+                axarr[row, col].set_ylim((0, 1.2))
+                axarr[row, col].set_title(w)
+    f.set_size_inches(35, 18)
+    plt.savefig('{}/growthcurves.png'.format(outDir), dpi=100, bbox_inches='tight')
 
 
 
@@ -403,8 +428,8 @@ fhLPSample.close()
 fhLCSample.close()
 fhLPMean.close()
 fhLCMean.close()
-if hmap:
-    printHeatMap(finalDataMean, pmData.clones, sortW, outDir)
+printHeatMap(finalDataMean, pmData.clones, sortW, outDir)
+curvePlot(finalDataReps, sortW, pmData.time)
 
 printStatus('Printing complete.')
 printStatus('Analysis complete.')
