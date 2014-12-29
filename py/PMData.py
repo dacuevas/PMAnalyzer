@@ -3,7 +3,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 10 Nov. 2014
+# Updated on 29 Dec. 2014
 
 import pylab as py
 import sys
@@ -11,18 +11,18 @@ import sys
 
 class PMData:
     '''Class for parsing phenotype microarray data'''
-    def __init__(self, filepath, noPlate):
+    def __init__(self, filepath, plateFlag):
         self.filepath = filepath
         self.numClones = 0
         self.numConditions = 0
         self.numFiltered = 0
-        self.noPlate = noPlate
+        self.plateFlag = plateFlag
         self.replicates = {}  # Hash of clone->[reps]
         self.clones = []  # Set of unique clone names
-        if noPlate:
-            self.wells = set([]) # Set of wells
-        else:
+        if plateFlag:
             self.wells = {}  # Hash of well->(mainsource, condition)
+        else:
+            self.wells = set([]) # Set of wells
         self.time = []  # Array of time values
 
         # Primary data structure to access data
@@ -56,23 +56,23 @@ class PMData:
 
     def __parseHeader(self, ll):
         '''Header line contains data columns and time values'''
-        if self.noPlate:
-            self.time = py.array([float(x) for x in ll[2:]])
-        else:
+        if self.plateFlag:
             self.time = py.array([float(x) for x in ll[4:]])
+        else:
+            self.time = py.array([float(x) for x in ll[2:]])
 
     def __parseODCurve(self, ll):
         '''Growth curve parsing method'''
         # Extract curve info
-        if self.noPlate:
-            (c, w) = ll[0:2]
-            curve = py.array([float(x) for x in ll[2:]])
-            self.wells.add(w)
-        else:
+        if self.plateFlag:
             (c, ms, gc, w) = ll[0:4]
             # Add well info
             self.wells[w] = (ms, gc)
             curve = py.array([float(x) for x in ll[4:]])
+        else:
+            (c, w) = ll[0:2]
+            curve = py.array([float(x) for x in ll[2:]])
+            self.wells.add(w)
 
         # Extract clone name and replicate name
         # If no replicate name exists, assign it "1"
@@ -114,14 +114,14 @@ class PMData:
                     # Find number of values in growth curve
                     numVals = len(odDict['od'])
                     if numVals != numTime:
-                        if self.noPlate:
-                            problems.append([clone, rep, w,
+                        if self.plateFlag:
+                            (ms, gc) = self.wells[w]
+                            problems.append([clone, rep, ms, gc, w,
                                             'time:{}\tcurve:{}'.format(
                                                 numTime, numVals)])
 
                         else:
-                            (ms, gc) = self.wells[w]
-                            problems.append([clone, rep, ms, gc, w,
+                            problems.append([clone, rep, w,
                                             'time:{}\tcurve:{}'.format(
                                                 numTime, numVals)])
 

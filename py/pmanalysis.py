@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 10 Nov. 2014
+# Updated on 29 Dec. 2014
 
 import argparse
 import sys
@@ -69,23 +69,25 @@ def printFiltered(pmData):
 
 def printHeatMap(data, clones, wells, outDir, plateInfo=False):
     '''Make growth heatmap after curve fitting and analysis'''
-    #finalDataMean[c][w]['params'] = meanParams
-    #        else:
-    #            retArray = py.concatenate((retArray,
-    #                                       py.array([currCurve])))
+
+    wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
+    clones = sorted(clones)
+    # plateInfo == True: use growth condition names
+    # plateInfo == False: use well ids
     if plateInfo:
-        newWells = [x[1] for x in [pmData.wells['{}{}'.format(w[0], w[1])] for w in wells]]
+        # Get growth condition
+        tmp = ['{}-{}'.format(w, pmData.wells[w][1]) for w in wellids]
+        wellLabels = [x if len(x) <= 20 else '{}...'.format(x[:18]) for x in tmp]
     else:
-        newWells = ['{}{}'.format(w[0], w[1]) for w in wells]
-    first = True
+        wellLabels = wellids
+
+    first = True  # Flag for creating plotData numpy array
     for clone in clones:
-        tmpArr = []
-        for well in wells:
-            w = '{}{}'.format(well[0], well[1])
-            tmpArr.append(data[clone][w]['params'][4])
+        # ...[params][4] is growth level
+        tmpArr = [data[clone][w]['params'][4] for w in wellids]
 
         if first:
-            plotData = py.array(tmpArr, ndmin=2)
+            plotData = py.array(tmpArr, ndmin=2)  # 2 dimensional array
             first = False
         else:
             plotData = py.concatenate((plotData, [tmpArr]))
@@ -95,11 +97,11 @@ def printHeatMap(data, clones, wells, outDir, plateInfo=False):
     # Plotting
     ######################################################
     numClones = len(clones)
-    numWells = len(newWells)
+    numWells = len(wellLabels)
 
     # Width is 15 inches
     # All measurements are in inches
-    width = 15;
+    width = 15
 
     # Height determined by number of clones
     # Cap at 12 inches
@@ -109,7 +111,7 @@ def printHeatMap(data, clones, wells, outDir, plateInfo=False):
 
     # Fontsize of x axis determined by
     # number of wells on x axsis
-    # 13 was determined by trial and error
+    # Minimum at 13 was determined by trial and error
     if numWells > 13:
         xfontsize = numWells / 13
     else:
@@ -124,11 +126,13 @@ def printHeatMap(data, clones, wells, outDir, plateInfo=False):
     hm = ax.pcolor(plotData, cmap=plt.cm.Greys, edgecolor='black', vmin=0, vmax=1.5)
 
     # Create color bar legend
-    mini = py.amin(plotData)
-    maxi = py.amax(plotData)
-    cbticks = [mini, maxi, 0.25, 0.75]
-    cblabs = ['min', 'max', 'no growth', 'growth']
-    cbticks, cblabs = zip(*sorted(zip(cbticks, cblabs)))
+    ###mini = py.amin(plotData)
+    ###maxi = py.amax(plotData)
+    ###cbticks = [mini, maxi, 0.25, 0.75]
+    ###cblabs = ['min', 'max', 'no growth', 'growth']
+    ###cbticks, cblabs = zip(*sorted(zip(cbticks, cblabs)))
+    cbticks = [0.25, 0.75]
+    cblabs = ['no growth', 'growth']
     cbar = fig.colorbar(hm, orientation='horizontal')
     cbar.set_ticks(cbticks)
     cbar.set_ticklabels(cblabs)
@@ -143,7 +147,7 @@ def printHeatMap(data, clones, wells, outDir, plateInfo=False):
     ax.set_yticks(py.arange(0, numClones)+0.5)
 
     # Set tick labels
-    ax.set_xticklabels(labels=newWells, minor=False, rotation=90, fontsize=xfontsize)
+    ax.set_xticklabels(labels=wellLabels, minor=False, rotation=90, fontsize=xfontsize)
     ax.set_yticklabels(labels=clones, minor=False)
     ax.axis('tight')
     # Remove tick marks lines
@@ -155,29 +159,61 @@ def printHeatMap(data, clones, wells, outDir, plateInfo=False):
 def curvePlot(data, wells, time):
     '''Plot growth curve plots on multi-faceted figure. Separate graphs based on well.
     Plot clone replicates together.'''
-    f, axarr = plt.subplots(8, 12)
-    colors = ['r', 'b', 'g']
-    for idx, w in enumerate(wells):
-        w = "{}{}".format(w[0], w[1])
-        row = int(py.floor(idx / 12))
-        col = (idx % 12)
-        for c in data:
-            shapes = ['--', '*--', '.--']
-            for cidx, rep in enumerate(data[c][w]):
-                clr = colors[(cidx % 3)]
-                shp = shapes[(cidx % 3)]
+    # Define colors and line types here
+    colors = ['r', 'b', 'g','k']
+    shapes = ['.--', '.--', '.--','.--']
+
+    wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
+    for c in data:
+        # Create figure and axis
+        f, axarr = plt.subplots(8, 12, sharex=True, sharey=True)
+        for idx, w in enumerate(wellids):
+            # row & col for subplot number
+            # row-major order
+            row = int(py.floor(idx / 12))
+            col = int(idx % 12)
+
+            # Ieterate through replicates (sorted alphabetically)
+            for cidx, rep in enumerate(sorted(data[c][w])):
+                # Determine color and shape of line
+                clr = colors[(cidx % 4)]
+                shp = shapes[(cidx % 4)]
                 curve = data[c][w][rep].rawcurve
-                axarr[row, col].plot(time, curve, '{}{}'.format(clr, shp), linewidth=1.5)
-                # Only plot tick marks on first column and last row
-                if col != 0:
-                    axarr[row, col].set_yticks([])
-                if row != 7:
-                    axarr[row, col].set_xticks([])
+                axarr[row, col].plot(time, curve, '{}{}'.format(clr, shp), linewidth=1.5, label=rep)
                 axarr[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
                 axarr[row, col].set_ylim((0, 1.2))
-                axarr[row, col].set_title(w)
-    f.set_size_inches(35, 18)
-    plt.savefig('{}/growthcurves.png'.format(outDir), dpi=100, bbox_inches='tight')
+                axarr[row, col].set_title(w, fontweight='bold')
+                #axarr[row, col].set_axis_bgcolor('#B0B0B0')
+        f.set_size_inches(35, 18)
+        plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', fancybox=True)
+        plt.savefig('{}/{}_growthcurves.png'.format(outDir, c), dpi=100, bbox_inches='tight')
+        plt.clf()  # Clear plot for next sample
+
+    # Create median curves
+    clones = []
+    fmed, axarrmed = plt.subplots(8, 12, sharex=True, sharey=True)
+    for cidx, c in enumerate(sorted(data)):
+        clones.append(c)
+        for idx, w in enumerate(wellids):
+            row = int(py.floor(idx / 12))
+            col = int(idx % 12)
+            for ridx, rep in enumerate(data[c][w]):
+                curve = data[c][w][rep].rawcurve
+                if ridx == 0:
+                    medarray = py.array([curve], ndmin=2)
+                else:
+                    medarray = py.concatenate((medarray, [curve]))
+            mcurve = py.median(medarray, axis=0)
+            clr = colors[(cidx % 4)]
+            shp = shapes[(cidx % 4)]
+            axarrmed[row, col].plot(time, mcurve, '{}{}'.format(clr, shp), linewidth=1.5, label=c)
+            axarrmed[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
+            axarrmed[row, col].set_ylim((0, 1.2))
+            axarrmed[row, col].set_title(w, fontweight='bold')
+            #axarrmed[row, col].set_axis_bgcolor('#B0B0B0')
+    fmed.set_size_inches(35, 18)
+    plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', fancybox=True)
+    plt.savefig('{}/medgrowthcurves.png'.format(outDir), dpi=100, bbox_inches='tight')
 
 
 
@@ -200,8 +236,8 @@ parser.add_argument('-g', '--newgrowth', action='store_true',
                     help='Apply new growth level calculation')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='Increase output for status messages')
-parser.add_argument('-p', '--noplate', action='store_true',
-                    help='Input wells are not based on a plate')
+parser.add_argument('-p', '--plate', action='store_true',
+                    help='Input wells are based on a plate')
 parser.add_argument('-m', '--heatmap', action='store_true',
                     help='Create growth level heatmap')
 
@@ -213,7 +249,7 @@ filterFlag = args.filter
 newGrowthFlag = args.newgrowth
 verbose = args.verbose
 debugOut = args.debug
-noPlate = args.noplate
+plateFlag = args.plate
 hmap = args.heatmap
 
 ###############################################################################
@@ -222,15 +258,15 @@ hmap = args.heatmap
 
 # Parse data file
 printStatus('Parsing input file...')
-pmData = PMData.PMData(inputFile, noPlate)
+pmData = PMData.PMData(inputFile, plateFlag)
 printStatus('Parsing complete.')
 if verbose:
-    if noPlate:
-        printStatus('Plate option not given.')
-        printStatus('Found {} samples.'.format(pmData.numClones))
-    else:
+    if plateFlag:
         printStatus('Found {} samples and {} growth conditions.'.format(
             pmData.numClones, pmData.numConditions))
+    else:
+        printStatus('Plate option not given.')
+        printStatus('Found {} samples.'.format(pmData.numClones))
 if debugOut:
     # Print out number of replicates for each clone
     for c, reps in pmData.replicates.items():
@@ -268,7 +304,7 @@ for c in pmData.clones:
 
     # Iterate through media sources
     for w in pmData.wells:
-        if not noPlate:
+        if plateFlag:
             (ms, gc) = pmData.wells[w]
 
         finalDataReps[c][w] = {}
@@ -278,10 +314,10 @@ for c in pmData.clones:
         tempRepData = py.array([], ndmin=2)
         first = True
         for rep in pmData.replicates[c]:
-            if debugOut and noPlate:
-                printStatus('DEBUG: Processing {}\t{}\t{}.'.format(c, rep, w))
-            elif debugOut:
+            if debugOut and plateFlag:
                 printStatus('DEBUG: Processing {}\t{}\t{}\t{}\t{}.'.format(c, rep, ms, gc, w))
+            elif debugOut:
+                printStatus('DEBUG: Processing {}\t{}\t{}.'.format(c, rep, w))
 
             # Create GrowthCurve object for sample
             currCurve = pmData.getODCurve(c, w, rep)
@@ -321,10 +357,10 @@ if filterFlag:
     printFiltered(pmData)
 
 # Print out plate info accordingly
-if noPlate:
-    plateInfo = 'well'
-else:
+if plateFlag:
     plateInfo = 'mainsource\tsubstrate\twell'
+else:
+    plateInfo = 'well'
 
 # logistic_params_sample file: logistic curve parameters for each sample
 fhLPSample = open('{}/logistic_params_sample_{}.txt'.format(outDir, outSuffix), 'w')
@@ -350,21 +386,21 @@ fhLCMean.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLCMean.write('\n')
 
 # Sort well numbers for print out
-if noPlate:
-    ws = [(x[0], int(x[1:])) for x in pmData.wells]
-else:
+if plateFlag:
     ws = [(x[0], int(x[1:])) for x in pmData.wells.keys()]
+else:
+    ws = [(x[0], int(x[1:])) for x in pmData.wells]
 sortW = sorted(ws, key=operator.itemgetter(0, 1))
 # Iterate through clones
 for c, wellDict in finalDataReps.items():
     # Iterate through wells
     for w in sortW:
         w = "{}{}".format(w[0], w[1])
-        if noPlate:
-            pInfo = w
-        else:
+        if plateFlag:
             (ms, gc) = pmData.wells[w]
             pInfo = '{}\t{}\t{}'.format(ms, gc, w)
+        else:
+            pInfo = w
 
         # Process mean information
         try:
@@ -428,7 +464,7 @@ fhLPSample.close()
 fhLCSample.close()
 fhLPMean.close()
 fhLCMean.close()
-printHeatMap(finalDataMean, pmData.clones, sortW, outDir)
+printHeatMap(finalDataMean, pmData.clones, sortW, outDir, plateFlag)
 curvePlot(finalDataReps, sortW, pmData.time)
 
 printStatus('Printing complete.')
