@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
-# Updated on 17 Nov. 2014
+# Updated on 30 Dec. 2014
 
 
 import pylab as py
@@ -27,7 +27,7 @@ class GrowthCurve:
 
         self.dataLogistic = logistic(self.time, self.y0,
                                      self.asymptote, self.maxGrowthRate, self.lag)
-        self.growthLevel = self.__calcGrowth()
+        self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)
 
     def __calcParameters(self, y0, t, raw):
@@ -77,10 +77,11 @@ class GrowthCurve:
 
         return maxGR, t
 
-    def __calcGrowth(self):
-        '''Calculate growth level using an adjusted harmonic mean'''
-        return len(self.dataLogistic) / py.sum((1 / (self.dataLogistic +
-                                                     self.asymptote)))
+
+def calcGrowth(logistic, asym):
+    '''Calculate growth level using an adjusted harmonic mean
+    using a logistic model and its asymptote'''
+    return len(logistic) / py.sum((1 / (logistic + asym)))
 
 
 def logistic(t, y0, a, mgr, l):

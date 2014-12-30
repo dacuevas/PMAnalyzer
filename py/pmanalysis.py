@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 29 Dec. 2014
+# Updated on 30 Dec. 2014
 
 import argparse
 import sys
@@ -179,10 +179,10 @@ for c in pmData.clones:
             # Add to temporary multi-dim array for calculating mean
             if first:
                 tempRepData = py.array([gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate,
-                                        gCurve.lag, gCurve.growthLevel], ndmin=2)
+                                        gCurve.lag], ndmin=2)
                 first = False
             else:
-                add = [gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate, gCurve.lag, gCurve.growthLevel]
+                add = [gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate, gCurve.lag]
                 tempRepData = py.concatenate((tempRepData, [add]))
 
             if debugOut:
@@ -190,9 +190,12 @@ for c in pmData.clones:
                                                     gCurve.maxGrowthRate,
                                                     gCurve.lag)
                 printStatus('DEBUG: parameters for {} {} {}: {}'.format(c, rep, w, msg))
-        # Create mean logistic curve from replicates' parameters
+        # Create logistic curve from replicates' mean parameters
         meanParams = py.mean(tempRepData, axis=0)
         finalDataMean[c][w]['curve'] = GrowthCurve.logistic(pmData.time, *meanParams[0:4])
+        # Determine growth level
+        gl = GrowthCurve.calcGrowth(finalDataMean[c][w]['curve'], meanParams[1])
+        meanParams = py.concatenate((meanParams, [gl]))
         finalDataMean[c][w]['params'] = meanParams
 printStatus('Processing complete.')
 
