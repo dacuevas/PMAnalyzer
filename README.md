@@ -25,6 +25,28 @@ The parsing scripts from PMAnalyzer are generated from the Molecular Devices Ana
 - Various growth curve figures
 - Growth level heat-map
 
+##*Usage*
+```
+usage: runPM -c config_filename [Options]
+OR
+usage: runPM -i PM_data_directory -n output_directory -o output_name [Options]
+
+Required
+   -c [config_filename]    : Configuration file listing all parameters (this takes precedence)
+   OR
+   -i [PM_data_directory]  : PM data directory path to files
+   -n [output_directory]   : Output directory (will create if non-existent)
+   -o [output_name]        : Suffix appended to all output files
+
+Optional
+   --debug                 : Print out debug messages
+   -f                      : Flag if filter should be applied to growth curves during PManalysis
+   -h, -?, --help          : This help message
+   -m                      : Generate figures
+   -p [plate_filename]     : Plate filepath
+   -v                      : Verbose output
+```
+
 ##*Cite*
 *Cuevas DA, Garza D, Sanchez SE et al.* ***[Elucidating genomic gaps using phenotypic profiles](http://f1000research.com/articles/3-210/)***
  *[v1; ref status: approved with reservations 1, http://f1000r.es/488] F1000Research 2014, 3:210
