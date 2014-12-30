@@ -23,6 +23,7 @@ Optional
    --debug                 : Print out debug messages
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
+   -m                      : Generate figures
    -p [plate_filename]     : Plate filepath
    -v                      : Verbose output
 
@@ -89,9 +90,9 @@ pyscriptdir=$(cd $(dirname $0); pwd -P)/py
 plscriptdir=$(cd $(dirname $0); pwd -P)/pl
 scriptname=$(echo $0 | perl -ne '/\/?.*\/(.+)/; print $1;')
 filterflag=""
-hmFlag=""
 verboseFlag=""
 debugFlag=""
+imageFlag=""
 num_replicates=1
 pythonexec="/usr/local/bin/python3.4"
 
@@ -106,22 +107,19 @@ while [[ $# != 0 ]]; do
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing config filename" >&2 && usage && exit 2
         configfile=$1
         ;;
-    --clear)
-        clearfiles=0
-        ;;
     --debug)
         debugFlag="--debug"
         ;;
     -f)
         filterflag="-f"
         ;;
-    --hm)
-        hmFlag="-g"
-        ;;
     -i)
         shift
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -i value" >&2 && usage && exit 2
         inputfiledir=$1
+        ;;
+    -m)
+        imageFlag="-i"
         ;;
     -n)
         shift
@@ -137,9 +135,6 @@ while [[ $# != 0 ]]; do
         shift
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -p value" >&2 && usage && exit 2
         plate=$1
-        ;;
-    --replicates)
-        num_replicates=2
         ;;
     -v)
         verbose=0;
@@ -207,9 +202,9 @@ eval $cmd
 
 in="$outputdir/${out}"
 if [[ $plate ]]; then
-    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname -p $filterflag $hmFlag $verboseFlag $debugFlag"
+    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname -p $filterflag $verboseFlag $debugFlag $imageFlag"
 else
-    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $hmFlag $verboseFlag $debugFlag"
+    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $verboseFlag $debugFlag $imageFlag"
 fi
 getTime && echo "${currtime}    *****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
@@ -217,5 +212,3 @@ eval $cmd
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
 getTime && echo "${currtime}    *****Completed!*****" >&1
-
-[[ $clearfiles ]] && rm ${parsedfiles[@]}
