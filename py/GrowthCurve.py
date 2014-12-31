@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
-# Updated on 30 Dec. 2014
+# Updated on 31 Dec. 2014
 
 
 import pylab as py
@@ -82,6 +82,20 @@ def calcGrowth(logistic, asym):
     '''Calculate growth level using an adjusted harmonic mean
     using a logistic model and its asymptote'''
     return len(logistic) / py.sum((1 / (logistic + asym)))
+
+
+def growthClass(gLevel):
+    '''Determine growth class based on growth level'''
+    if gLevel >= 0.75:
+        return '+++'
+    elif gLevel >= 0.50:
+        return '++'
+    elif gLevel >= 0.35:
+        return '+'
+    elif gLevel >= 0.25:
+        return '-'
+    else:
+        return '--'
 
 
 def logistic(t, y0, a, mgr, l):

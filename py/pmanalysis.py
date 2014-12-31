@@ -218,7 +218,7 @@ else:
 # logistic_params_sample file: logistic curve parameters for each sample
 fhLPSample = open('{}/logistic_params_sample_{}.txt'.format(outDir, outSuffix), 'w')
 fhLPSample.write('sample\treplicate\t{}\ty0\tlag\t'.format(plateInfo))
-fhLPSample.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\n')
+fhLPSample.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\tgrowth\n')
 
 # logistic_curves_sample file: logistic curves for each sample
 fhLCSample = open('{}/logistic_curves_sample_{}.txt'.format(outDir, outSuffix), 'w')
@@ -229,7 +229,7 @@ fhLCSample.write('\n')
 # logistic_params_mean file. logistic curve parameters (mean)
 fhLPMean = open('{}/logistic_params_mean_{}.txt'.format(outDir, outSuffix), 'w')
 fhLPMean.write('sample\t{}\ty0\tlag\t'.format(plateInfo))
-fhLPMean.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
+fhLPMean.write('maximumgrowthrate\tasymptote\tgrowthlevel\tgrowth\n')
 
 
 # logistic_curves_mean file. logistic curve (mean)
@@ -275,8 +275,10 @@ for c, wellDict in finalDataReps.items():
         mgr = curr['params'][2]
         lag = curr['params'][3]
         gLevel = curr['params'][4]
+        growth = GrowthCurve.growthClass(gLevel)
         fhLPMean.write('\t'.join(['{:.3f}'.format(x)
                                   for x in (y0, lag, mgr, asymptote, gLevel)]))
+        fhLPMean.write('\t{}'.format(growth))
         fhLPMean.write('\n')
 
         # Print logistic curve
@@ -304,9 +306,11 @@ for c, wellDict in finalDataReps.items():
             asymptote = curve.asymptote
             gLevel = curve.growthLevel
             sse = curve.sse
+            growth = GrowthCurve.growthClass(gLevel)
             fhLPSample.write('\t'.join(['{:.3f}'.format(x)
                                     for x in (y0, lag, mgr, asymptote,
                                               gLevel, sse)]))
+            fhLPSample.write('\t{}'.format(growth))
             fhLPSample.write('\n')
 
             # Print logistic curve
