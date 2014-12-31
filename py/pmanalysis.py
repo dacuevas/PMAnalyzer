@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 30 Dec. 2014
+# Updated on 31 Dec. 2014
 
 import argparse
 import sys
@@ -211,7 +211,7 @@ if filterFlag:
 
 # Print out plate info accordingly
 if plateFlag:
-    plateInfo = 'mainsource\tsubstrate\twell'
+    plateInfo = 'mainsource\tsubstrate\tplate\twell'
 else:
     plateInfo = 'well'
 
@@ -251,7 +251,8 @@ for c, wellDict in finalDataReps.items():
         w = "{}{}".format(w[0], w[1])
         if plateFlag:
             (ms, gc) = pmData.wells[w]
-            pInfo = '{}\t{}\t{}'.format(ms, gc, w)
+            pn = pmData.plateName[c]
+            pInfo = '{}\t{}\t{}\t{}'.format(ms, gc, pn, w)
         else:
             pInfo = w
 
