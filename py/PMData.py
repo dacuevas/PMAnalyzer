@@ -3,7 +3,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 29 Dec. 2014
+# Updated on 31 Dec. 2014
 
 import pylab as py
 import sys
@@ -17,6 +17,7 @@ class PMData:
         self.numConditions = 0
         self.numFiltered = 0
         self.plateFlag = plateFlag
+        self.plateName = {}  # Hash of clone->plateName
         self.replicates = {}  # Hash of clone->[reps]
         self.clones = []  # Set of unique clone names
         if plateFlag:
@@ -57,7 +58,7 @@ class PMData:
     def __parseHeader(self, ll):
         '''Header line contains data columns and time values'''
         if self.plateFlag:
-            self.time = py.array([float(x) for x in ll[4:]])
+            self.time = py.array([float(x) for x in ll[5:]])
         else:
             self.time = py.array([float(x) for x in ll[2:]])
 
@@ -65,10 +66,10 @@ class PMData:
         '''Growth curve parsing method'''
         # Extract curve info
         if self.plateFlag:
-            (c, ms, gc, w) = ll[0:4]
+            (c, ms, gc, pn, w) = ll[0:5]
             # Add well info
             self.wells[w] = (ms, gc)
-            curve = py.array([float(x) for x in ll[4:]])
+            curve = py.array([float(x) for x in ll[5:]])
         else:
             (c, w) = ll[0:2]
             curve = py.array([float(x) for x in ll[2:]])
@@ -90,6 +91,10 @@ class PMData:
 
         if rep not in self.replicates[cName]:
             self.replicates[cName].append(rep)
+
+        # Record plate name
+        if self.plateFlag:
+            self.plateName[cName] = pn
 
         # Add curve to primary data hash
         # Initialize data hash when needed

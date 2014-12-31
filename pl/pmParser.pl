@@ -5,7 +5,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 10 Nov. 2014
+# Updated on 31 Dec. 2014
 
 use warnings;
 use strict;
@@ -261,13 +261,13 @@ sub calcMean {
 ###
 # Input is the data hash-reference object. Information is printed in the order:
 # (All output is tab-delimited)
-# Row 1 (header) -- sample (main_source substrate || well#) [time]
-# Row 2-n -- sample (main_source substrate || well#) [data]
+# Row 1 (header) -- sample (main_source substrate well# plate_name) [time]
+# Row 2-n -- sample (main_source substrate well# plate_name) [data]
 # Note: When replicates are kept separate, the sample is separated into two
 # columns for "sample" and "rep"
 ###
 sub printData {
-    my ($data, $plate, $reps, $time) = @_;
+    my ($data, $plate, $pn, $reps, $time) = @_;
     foreach my $c ( keys %$data ) {
         foreach my $r ( map { $_->[0] } sort {$a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } map { [$_,/([A-Za-z]+)/,/(\d+)/] } keys %{$data->{$c}} ) {
             # If the replicates flag is set then we are in the wells already
@@ -283,7 +283,7 @@ sub printData {
                 my $ms = $plate ? $plate->{$w}->{main_source} : 0;
                 my $s = $plate ? $plate->{$w}->{substrate} : 0;
                 $plate ?
-                    print join("\t", ($c, $ms, $s, $w, @ods))."\n" :
+                    print join("\t", ($c, $ms, $s, $pn, $w, @ods))."\n" :
                     print join("\t", ($c, $w, @ods))."\n"
                 ;
             }
@@ -300,7 +300,7 @@ sub printData {
                     my $ms = $plate ? $plate->{$w}->{main_source} : 0;
                     my $s = $plate ? $plate->{$w}->{substrate} : 0;
                     $plate ?
-                        print join("\t", ($c, $ms, $s, $w, @ods))."\n" :
+                        print join("\t", ($c, $ms, $s, $pn, $w, @ods))."\n" :
                         print join("\t", ($c, $w, @ods))."\n"
                     ;
                 }
@@ -366,9 +366,11 @@ else {
 
 # Check if plate file exists
 my $plate;
+my $plateName;
 if( $opts->{plate} ) {
     if( -e $opts->{plate} ) {
         $plate = &readPlate($opts->{plate});
+        $plateName = fileparse($opts->{plate}, qr/\.[^.]*/); # Capture file extension
     }
     else {
         &usage("Plate file does not exist");
@@ -399,7 +401,7 @@ $data = !$opts->{reps}  ? $data
 # Print out headers first
 # Depends on if a plate file was supplied or not
 $plate ?
-    print "sample\tmainsource\tsubstrate\twell" :
+    print "sample\tmainsource\tsubstrate\tplate\twell" :
     print "sample\twell";
 
 # Print out hours
@@ -409,4 +411,4 @@ foreach my $timeIter( @time ) {
 print "\n"; # End of header line
 
 # Print out data
-&printData($data, $plate, $opts->{reps}, \@time);
+&printData($data, $plate, $plateName, $opts->{reps}, \@time);
