@@ -19,6 +19,7 @@ The parsing scripts from PMAnalyzer are generated from the Molecular Devices Ana
  `sample/data_csedlakii` directory.
 
 Filenames must be in the format of `[sample]_[replicate]_[other].txt`. For example
+
 | Sample | Replicate | Filename |
 |:------:|:---------:|:--------:|
 | csedlakii | rep1 | *csedlakii_rep1_2014Nov12.txt* |
@@ -26,7 +27,7 @@ Filenames must be in the format of `[sample]_[replicate]_[other].txt`. For examp
 | csedlakii | rep3 | *csedlakii_rep3_2014Nov12.txt* |
 | ecoli | rep1 | *ecoli_rep1_2014Nov15.txt* |
 | ecoli | rep2 | *ecoli_rep2_2014Nov15.txt* |
-| ecolo | rep3 | *ecoli_rep3_2014Nov15.txt* |
+| ecoli | rep3 | *ecoli_rep3_2014Nov15.txt* |
 
 **sample** and **replicate** names can have letters `A-z`, numbers `0-9`, hyphens `-`, and periods `.` (periods for sample only).
 
