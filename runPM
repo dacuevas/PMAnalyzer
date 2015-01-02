@@ -27,6 +27,12 @@ Optional
    -p [plate_filename]     : Plate filepath
    -v                      : Verbose output
 
+NOTES
+    FILE NAME FORMATS:
+        <Sample Name>_<Replicate Letter>_<other text>.txt
+        Regex used:    <Sample Name> -- [A-Za-z0-9-.]+
+                       <Replicate Letter> -- [A-Za-z0-9]+
+
 " >&2
 }
 
