@@ -1,0 +1,97 @@
+sample	mainsource	substrate	plate	well	y0	lag	maximumgrowthrate	asymptote	growthlevel	growth
+R.S.3	Carbon	Propionate	sample_plate	A1	0.102	2.439	0.044	0.180	0.331	-
+R.S.3	Carbon	L-Glutamic Acid	sample_plate	A2	0.103	2.181	0.043	0.241	0.418	+
+R.S.3	Carbon	D-Glucose	sample_plate	A3	0.112	2.070	0.259	0.450	0.822	+++
+R.S.3	Carbon	Potassium Sorbate	sample_plate	A4	0.106	0.465	0.232	0.128	0.255	-
+R.S.3	Carbon	Lactulose	sample_plate	A5	0.103	3.075	0.021	0.182	0.316	-
+R.S.3	Carbon	Glycerol	sample_plate	A6	0.104	4.396	0.192	0.555	0.929	+++
+R.S.3	Carbon	Myo-Inositol	sample_plate	A7	0.104	7.160	0.070	0.332	0.533	++
+R.S.3	Carbon	D-Serine	sample_plate	A8	0.105	2.631	0.125	0.407	0.707	++
+R.S.3	Carbon	D-Galactose	sample_plate	A9	0.105	2.283	0.131	0.419	0.731	++
+R.S.3	Carbon	Oxalic Acid	sample_plate	A10	0.102	1.386	0.047	0.142	0.274	-
+R.S.3	Carbon	Malic Acid	sample_plate	A11	0.099	8.047	0.056	0.204	0.353	+
+R.S.3	Carbon	L-Methionine	sample_plate	A12	0.100	0.499	0.296	0.107	0.213	--
+R.S.3	Carbon	Glycine	sample_plate	B1	0.099	0.318	0.259	0.138	0.274	-
+R.S.3	Carbon	Negative Control	sample_plate	B2	0.105	0.575	0.682	0.128	0.255	-
+R.S.3	Carbon	Quinate	sample_plate	B3	0.107	0.494	0.550	0.124	0.248	--
+R.S.3	Carbon	Succinate	sample_plate	B4	0.108	4.454	0.086	0.401	0.658	++
+R.S.3	Carbon	Dulcitol	sample_plate	B5	0.110	5.197	0.188	0.477	0.807	+++
+R.S.3	Carbon	Alpha-D-Glucose	sample_plate	B6	0.116	2.235	0.273	0.449	0.821	+++
+R.S.3	Carbon	L-Xylose	sample_plate	B7	0.108	0.587	0.559	0.127	0.253	-
+R.S.3	Carbon	L-Aspartic Acid	sample_plate	B8	0.106	5.089	0.064	0.281	0.477	+
+R.S.3	Carbon	D-Fructose	sample_plate	B9	0.109	2.744	0.232	0.461	0.825	+++
+R.S.3	Carbon	L-Valine	sample_plate	B10	0.107	0.484	0.365	0.116	0.232	--
+R.S.3	Carbon	Pyruvate	sample_plate	B11	0.106	1.653	0.112	0.421	0.731	++
+R.S.3	Carbon	Lactate	sample_plate	B12	0.102	6.654	0.208	0.697	1.093	+++
+R.S.3	Carbon	Citric Acid	sample_plate	C1	0.100	8.402	0.078	0.328	0.523	++
+R.S.3	Carbon	D-Mannose	sample_plate	C2	0.111	2.578	0.205	0.542	0.948	+++
+R.S.3	Carbon	L-Serine	sample_plate	C3	0.106	2.669	0.057	0.326	0.544	++
+R.S.3	Carbon	Salicoside	sample_plate	C4	0.109	0.334	0.073	0.154	0.300	-
+R.S.3	Carbon	Cellobiose	sample_plate	C5	0.110	6.276	0.168	0.477	0.786	+++
+R.S.3	Carbon	Adonitol	sample_plate	C6	0.105	0.500	0.030	0.152	0.287	-
+R.S.3	Carbon	D-Glucose-6-Phosphate	sample_plate	C7	0.109	4.732	0.396	0.669	1.145	+++
+R.S.3	Carbon	L-Sorbose	sample_plate	C8	0.109	0.500	0.024	0.142	0.271	-
+R.S.3	Carbon	D-Arabitol	sample_plate	C9	0.099	0.364	0.668	0.123	0.245	--
+R.S.3	Carbon	L-Lysine	sample_plate	C10	0.107	0.492	0.431	0.122	0.243	--
+R.S.3	Carbon	Trehalose	sample_plate	C11	0.110	2.391	0.261	0.468	0.846	+++
+R.S.3	Carbon	Acetic Acid	sample_plate	C12	0.102	8.012	0.075	0.358	0.562	++
+R.S.3	Carbon	L-Alanine	sample_plate	D1	0.101	6.179	0.044	0.226	0.383	+
+R.S.3	Carbon	L-Arabinose	sample_plate	D2	0.105	0.452	0.114	0.416	0.738	++
+R.S.3	Carbon	L-Threonine	sample_plate	D3	0.108	0.559	0.666	0.135	0.269	-
+R.S.3	Carbon	4 Hydroxy-Phenylacetate	sample_plate	D4	0.105	0.498	0.024	0.133	0.256	-
+R.S.3	Carbon	D-Ribose	sample_plate	D5	0.109	4.041	0.141	0.439	0.749	++
+R.S.3	Carbon	Melibiose	sample_plate	D6	0.107	3.668	0.237	0.445	0.788	+++
+R.S.3	Carbon	D-Alanine	sample_plate	D7	0.107	6.536	0.058	0.316	0.510	++
+R.S.3	Carbon	L-Fucose	sample_plate	D8	0.105	8.474	0.119	0.449	0.702	++
+R.S.3	Carbon	L-Asparagine	sample_plate	D9	0.107	5.065	0.064	0.381	0.606	++
+R.S.3	Carbon	L-Leucine	sample_plate	D10	0.108	0.475	0.852	0.123	0.245	--
+R.S.3	Carbon	D-Aspartic Acid	sample_plate	D11	0.105	0.482	0.453	0.120	0.240	--
+R.S.3	Carbon	Inosine	sample_plate	D12	0.103	3.604	0.304	0.513	0.905	+++
+R.S.3	Carbon	Thymidine	sample_plate	E1	0.104	0.975	0.142	0.232	0.443	+
+R.S.3	Carbon	Sucrose	sample_plate	E2	0.110	1.170	0.192	0.182	0.355	+
+R.S.3	Carbon	D-Xylose	sample_plate	E3	0.105	2.803	0.167	0.439	0.771	+++
+R.S.3	Carbon	L-Cysteine	sample_plate	E4	0.107	0.500	0.027	0.137	0.262	-
+R.S.3	Carbon	Alpha-D-Lactose	sample_plate	E5	0.106	8.196	0.193	0.475	0.766	+++
+R.S.3	Carbon	Raffinose	sample_plate	E6	0.107	1.612	0.215	0.153	0.300	-
+R.S.3	Carbon	D-Asparagine	sample_plate	E7	0.105	0.331	0.102	0.130	0.256	-
+R.S.3	Carbon	Erythritol	sample_plate	E8	0.107	0.485	0.420	0.127	0.253	-
+R.S.3	Carbon	D-Cysteine	sample_plate	E9	0.108	0.529	1.384	0.126	0.251	-
+R.S.3	Carbon	L-Isoleucine	sample_plate	E10	0.105	0.425	0.491	0.125	0.249	--
+R.S.3	Carbon	L-Cysteic Acid	sample_plate	E11	0.105	0.491	0.444	0.114	0.228	--
+R.S.3	Carbon	Adenosine	sample_plate	E12	0.104	4.480	0.253	0.517	0.889	+++
+R.S.3	Carbon	Xylitol	sample_plate	F1	0.098	0.424	0.605	0.125	0.249	--
+R.S.3	Carbon	L-Glutamine	sample_plate	F2	0.102	3.295	0.071	0.317	0.540	++
+R.S.3	Carbon	L-Rhamnose	sample_plate	F3	0.106	4.168	0.135	0.508	0.840	+++
+R.S.3	Carbon	Putrescine	sample_plate	F4	0.107	0.500	0.025	0.148	0.280	-
+R.S.3	Carbon	2 Deoxy-D-Ribose	sample_plate	F5	0.107	0.329	0.150	0.155	0.306	-
+R.S.3	Carbon	L-Arabitol	sample_plate	F6	0.106	0.824	0.025	0.149	0.279	-
+R.S.3	Carbon	D-Glucosamine	sample_plate	F7	0.111	3.188	0.224	0.474	0.839	+++
+R.S.3	Carbon	L-Phenylalanine	sample_plate	F8	0.108	0.495	0.219	0.137	0.273	-
+R.S.3	Carbon	D-Glutamic Acid	sample_plate	F9	0.107	0.500	0.016	0.129	0.246	--
+R.S.3	Carbon	D-Arabinose	sample_plate	F10	0.107	8.420	0.128	0.462	0.724	++
+R.S.3	Carbon	L-Tryptophan	sample_plate	F11	0.110	0.226	0.210	0.155	0.307	-
+R.S.3	Carbon	L-Pyro-Glutamic Acid	sample_plate	F12	0.101	0.502	0.036	0.182	0.333	-
+R.S.3	Nitrogen	Negative Control	sample_plate	G1	0.112	0.168	0.078	0.286	0.522	++
+R.S.3	Nitrogen	Tyramine	sample_plate	G2	0.112	5.341	0.052	0.249	0.429	+
+R.S.3	Nitrogen	Uridine	sample_plate	G3	0.111	0.756	0.093	0.287	0.527	++
+R.S.3	Nitrogen	Inosine	sample_plate	G4	0.111	0.747	0.082	0.264	0.486	+
+R.S.3	Nitrogen	Histamine	sample_plate	G5	0.111	0.611	0.078	0.255	0.471	+
+R.S.3	Nitrogen	L-Pyro-Glutamic Acid	sample_plate	G6	0.112	1.779	0.134	0.271	0.506	++
+R.S.3	Nitrogen	Cytidine	sample_plate	G7	0.108	3.848	0.602	0.723	1.273	+++
+R.S.3	Nitrogen	Adenosine	sample_plate	G8	0.109	2.441	0.294	0.600	1.066	+++
+R.S.3	Nitrogen	L-Arginine	sample_plate	G9	0.114	3.124	0.209	0.380	0.687	++
+R.S.3	Nitrogen	Thiourea	sample_plate	G10	0.109	0.000	0.061	0.225	0.417	+
+R.S.3	Nitrogen	Biuret	sample_plate	G11	0.109	0.495	0.086	0.259	0.480	+
+R.S.3	Nitrogen	Guanidine	sample_plate	G12	0.105	6.439	0.066	0.247	0.424	+
+R.S.3	Nitrogen	L-Histidine	sample_plate	H1	0.115	0.904	0.105	0.271	0.505	++
+R.S.3	Nitrogen	Thymine	sample_plate	H2	0.106	0.376	0.074	0.307	0.548	++
+R.S.3	Nitrogen	L-Glutathione	sample_plate	H3	0.107	0.083	0.125	0.426	0.764	+++
+R.S.3	Nitrogen	Allantoin	sample_plate	H4	0.107	0.791	0.076	0.296	0.531	++
+R.S.3	Nitrogen	Adenine	sample_plate	H5	0.107	2.284	0.116	0.454	0.774	+++
+R.S.3	Nitrogen	Glycine	sample_plate	H6	0.108	1.150	0.069	0.289	0.514	++
+R.S.3	Nitrogen	Beta-Phenylethylamine	sample_plate	H7	0.108	0.167	0.052	0.184	0.348	-
+R.S.3	Nitrogen	L-Proline	sample_plate	H8	0.107	3.303	0.096	0.489	0.793	+++
+R.S.3	Nitrogen	D-Methionine	sample_plate	H9	0.113	0.254	0.058	0.262	0.472	+
+R.S.3	Nitrogen	Cytosine	sample_plate	H10	0.109	3.718	0.076	0.435	0.699	++
+R.S.3	Nitrogen	D-Valine	sample_plate	H11	0.111	0.040	0.064	0.201	0.380	+
+R.S.3	Nitrogen	N-Acetyl-D-Glucosamine	sample_plate	H12	0.108	4.831	0.272	0.481	0.835	+++

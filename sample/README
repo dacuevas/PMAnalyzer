@@ -19,3 +19,5 @@ To generate figures and the growth heat-map
 > ../runPM -i data_csedlakii -n results -o myoutput -p sample_plate.txt -m
 
 Note: use the -v flag to produce a verbose output.
+
+Sample ouput and images can be found in the `sample_results/` directory.
