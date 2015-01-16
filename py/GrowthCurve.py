@@ -4,9 +4,10 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
-# Updated on 31 Dec. 2014
+# Updated on 16 Jan. 2015
 
 
+from __future__ import absolute_import, division, print_function
 import pylab as py
 import scipy.optimize as optimize
 import sys

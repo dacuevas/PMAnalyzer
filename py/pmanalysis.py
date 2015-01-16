@@ -4,8 +4,9 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 31 Dec. 2014
+# Updated on 16 Jan. 2015
 
+from __future__ import absolute_import, division, print_function
 import argparse
 import sys
 import time
@@ -15,8 +16,6 @@ import GrowthCurve
 import PMFigures
 import operator
 import pylab as py
-import matplotlib.pyplot as plt
-import pprint
 
 
 ###############################################################################
@@ -308,8 +307,8 @@ for c, wellDict in finalDataReps.items():
             sse = curve.sse
             growth = GrowthCurve.growthClass(gLevel)
             fhLPSample.write('\t'.join(['{:.3f}'.format(x)
-                                    for x in (y0, lag, mgr, asymptote,
-                                              gLevel, sse)]))
+                                        for x in (y0, lag, mgr, asymptote,
+                                                  gLevel, sse)]))
             fhLPSample.write('\t{}'.format(growth))
             fhLPSample.write('\n')
 

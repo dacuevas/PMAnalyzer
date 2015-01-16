@@ -4,8 +4,9 @@
 #
 # Author: Daniel A Cuevas
 # Created on 29 Dec. 2014
-# Updated on 29 Dec. 2014
+# Updated on 16 Jan. 2015
 
+from __future__ import absolute_import, division, print_function
 import pylab as py
 import matplotlib.pyplot as plt
 
@@ -65,7 +66,9 @@ def heatMap(data, pmData, wells, outDir, plateFlag):
     fig.set_size_inches(width, height)
 
     # Create heatmap object using pcolor
-    hm = ax.pcolor(plotData, cmap=plt.cm.Greys, edgecolor='black', vmin=0, vmax=1.5)
+    # Find maximum growth level value
+    maxGL = py.amax(plotData) + 0.1
+    hm = ax.pcolor(plotData, cmap=plt.cm.Greys, edgecolor='black', vmin=0, vmax=maxGL)
 
     # Create color bar legend
     ###mini = py.amin(plotData)
@@ -105,6 +108,8 @@ def curvePlot(data, wells, time, outDir):
     shapes = ['.--', '.--', '.--', '.--']
 
     wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
+    # Find high value for plotting
+    hi = findHighOD(data) + 0.15
     for c in data:
         # Create figure and axis
         f, axarr = plt.subplots(8, 12, sharex=True, sharey=True)
@@ -122,7 +127,7 @@ def curvePlot(data, wells, time, outDir):
                 curve = data[c][w][rep].rawcurve
                 axarr[row, col].plot(time, curve, '{}{}'.format(clr, shp), linewidth=1.5, label=rep)
                 axarr[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
-                axarr[row, col].set_ylim((0, 1.2))
+                axarr[row, col].set_ylim((0, hi))
                 axarr[row, col].set_title(w, fontweight='bold')
                 #axarr[row, col].set_axis_bgcolor('#B0B0B0')
         f.set_size_inches(35, 18)
@@ -143,6 +148,8 @@ def curvePlot2(data, wells, time, func, outDir, name):
     wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
     # Create curves
     fmed, axarrmed = plt.subplots(8, 12, sharex=True, sharey=True)
+    # Find high value for plotting
+    hi = findHighOD(data) + 0.15
     for cidx, c in enumerate(sorted(data)):
         for idx, w in enumerate(wellids):
             row = int(py.floor(idx / 12))
@@ -158,7 +165,7 @@ def curvePlot2(data, wells, time, func, outDir, name):
             shp = shapes[(cidx % 4)]
             axarrmed[row, col].plot(time, mcurve, '{}{}'.format(clr, shp), linewidth=1.5, label=c)
             axarrmed[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
-            axarrmed[row, col].set_ylim((0, 1.2))
+            axarrmed[row, col].set_ylim((0, hi))
             axarrmed[row, col].set_title(w, fontweight='bold')
             #axarrmed[row, col].set_axis_bgcolor('#B0B0B0')
     fmed.set_size_inches(35, 18)
@@ -166,3 +173,15 @@ def curvePlot2(data, wells, time, func, outDir, name):
     axarrmed[7, 0].set_ylabel(r'OD$_{600nm}$', fontweight='bold')
     plt.legend(bbox_to_anchor=(1, 4.5), loc='center left', fancybox=True)
     plt.savefig('{}/{}_growthcurves.png'.format(outDir, name), dpi=100, bbox_inches='tight')
+
+
+def findHighOD(data):
+    '''Find the highest OD value to set for plots'''
+    hi = 0
+    for c, wDict in data.items():
+        for w, rDict in wDict.items():
+            for r in rDict:
+                max = py.amax(rDict[r].rawcurve)
+                if max > hi:
+                    hi = max
+    return hi
