@@ -4,13 +4,11 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 16 Jan. 2015
+# Updated on 27 Jan. 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
-import sys
-import time
-import datetime
+import PMUtil as util
 import PMData
 import GrowthCurve
 import PMFigures
@@ -21,19 +19,6 @@ import pylab as py
 ###############################################################################
 # Utility methods
 ###############################################################################
-
-def timeStamp():
-    '''Return time stamp'''
-    t = time.time()
-    fmt = '[%Y-%m-%d %H:%M:%S]'
-    return datetime.datetime.fromtimestamp(t).strftime(fmt)
-
-
-def printStatus(msg):
-    '''Print status message'''
-    print('{} {}'.format(timeStamp(), msg), file=sys.stderr)
-    sys.stderr.flush()
-
 
 def curveFilter(clone, rep, w, curve, pmData):
     '''Determine if growth curve passes filters'''
@@ -106,25 +91,25 @@ imagesFlag = args.images
 ###############################################################################
 
 # Parse data file
-printStatus('Parsing input file...')
+util.printStatus('Parsing input file...')
 pmData = PMData.PMData(inputFile, plateFlag)
-printStatus('Parsing complete.')
+util.printStatus('Parsing complete.')
 if verbose:
     if plateFlag:
-        printStatus('Found {} samples and {} growth conditions.'.format(
+        util.printStatus('Found {} samples and {} growth conditions.'.format(
             pmData.numClones, pmData.numConditions))
     else:
-        printStatus('Plate option not given.')
-        printStatus('Found {} samples.'.format(pmData.numClones))
+        util.printStatus('Plate option not given.')
+        util.printStatus('Found {} samples.'.format(pmData.numClones))
 if debugOut:
     # Print out number of replicates for each clone
     for c, reps in pmData.replicates.items():
-        printStatus('DEBUG: {} has {} replicates.'.format(c, len(reps)))
+        util.printStatus('DEBUG: {} has {} replicates.'.format(c, len(reps)))
 
 
 # Perform filter
 if filterFlag:
-    printStatus('Performing filtering...')
+    util.printStatus('Performing filtering...')
     # Iterate through clones
     for c, repDict in pmData.dataHash.items():
         # Iterate through replicates
@@ -134,16 +119,16 @@ if filterFlag:
                 # Perform filter check
                 curveFilter(c, rep, w, odDict['od'], pmData)
 
-    printStatus('Filtering complete.')
+    util.printStatus('Filtering complete.')
     if verbose:
-        printStatus('Filtered {} growth curves.'.format(pmData.numFiltered))
+        util.printStatus('Filtered {} growth curves.'.format(pmData.numFiltered))
 
 elif verbose:
-    printStatus('Filtering option not given -- no filtering performed.')
+    util.printStatus('Filtering option not given -- no filtering performed.')
 
 
 # Create growth curves and logistic models
-printStatus('Processing growth curves and creating logistic models...')
+util.printStatus('Processing growth curves and creating logistic models...')
 finalDataReps = {}
 finalDataMean = {}
 # Iterate through clones
@@ -164,9 +149,9 @@ for c in pmData.clones:
         first = True
         for rep in pmData.replicates[c]:
             if debugOut and plateFlag:
-                printStatus('DEBUG: Processing {}\t{}\t{}\t{}\t{}.'.format(c, rep, ms, gc, w))
+                util.printStatus('DEBUG: Processing {}\t{}\t{}\t{}\t{}.'.format(c, rep, ms, gc, w))
             elif debugOut:
-                printStatus('DEBUG: Processing {}\t{}\t{}.'.format(c, rep, w))
+                util.printStatus('DEBUG: Processing {}\t{}\t{}.'.format(c, rep, w))
 
             # Create GrowthCurve object for sample
             currCurve = pmData.getODCurve(c, w, rep)
@@ -188,7 +173,7 @@ for c in pmData.clones:
                 msg = 'a={}, mgr={}, lag={}'.format(gCurve.asymptote,
                                                     gCurve.maxGrowthRate,
                                                     gCurve.lag)
-                printStatus('DEBUG: parameters for {} {} {}: {}'.format(c, rep, w, msg))
+                util.printStatus('DEBUG: parameters for {} {} {}: {}'.format(c, rep, w, msg))
         # Create logistic curve from replicates' mean parameters
         meanParams = py.mean(tempRepData, axis=0)
         finalDataMean[c][w]['curve'] = GrowthCurve.logistic(pmData.time, *meanParams[0:4])
@@ -196,14 +181,14 @@ for c in pmData.clones:
         gl = GrowthCurve.calcGrowth(finalDataMean[c][w]['curve'], meanParams[1])
         meanParams = py.concatenate((meanParams, [gl]))
         finalDataMean[c][w]['params'] = meanParams
-printStatus('Processing complete.')
+util.printStatus('Processing complete.')
 
 
 ###############################################################################
 # Output Files
 ###############################################################################
 
-printStatus('Printing output files...')
+util.printStatus('Printing output files...')
 # Print out filtered data if set
 if filterFlag:
     printFiltered(pmData)
@@ -321,19 +306,23 @@ fhLPSample.close()
 fhLCSample.close()
 fhLPMean.close()
 fhLCMean.close()
-printStatus('Output files complete')
+util.printStatus('Output files complete')
 
 if imagesFlag:
-    printStatus('Generating growth level heatmap...')
+    util.printStatus('Generating growth level heatmap...')
     PMFigures.heatMap(finalDataMean, pmData, sortW, outDir, plateFlag)
-    printStatus('Generating samples\' growth curves...')
+    util.printStatus('Generating samples\' growth curves...')
     PMFigures.curvePlot(finalDataReps, sortW, pmData.time, outDir)
-    printStatus('Generating median growth curves...')
+    util.printStatus('Generating median growth curves...')
     PMFigures.curvePlot2(finalDataReps, sortW, pmData.time,
                          py.median, outDir, name='median')
-    printStatus('Generating average growth curves...')
+    PMFigures.curvePlot3(finalDataReps, sortW, pmData.time,
+                         py.median, outDir, name='median')
+    util.printStatus('Generating average growth curves...')
     PMFigures.curvePlot2(finalDataReps, sortW, pmData.time,
                          py.mean, outDir, name='mean')
+    PMFigures.curvePlot3(finalDataReps, sortW, pmData.time,
+                         py.mean, outDir, name='mean')
 
-printStatus('Printing complete.')
-printStatus('Analysis complete.')
+util.printStatus('Printing complete.')
+util.printStatus('Analysis complete.')
