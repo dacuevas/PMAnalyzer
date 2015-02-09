@@ -213,8 +213,13 @@ def curvePlot3(data, wells, time, func, outDir, name):
             clr = colors[3]
             shp = shapes[3]
             axarrmed[row, col].plot(time, mcurve, '{}{}'.format(clr, shp), linewidth=1.5)
+            axarrmed[row, col].errorbar(time, mcurve,
+                                        yerr=py.std(medarray, axis=0),
+                                        linestyle='None',
+                                        ecolor='#888888')
             axarrmed[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
             axarrmed[row, col].set_ylim((0, hi))
+#            axarrmed[row, col].set_xlim((0, time))
             axarrmed[row, col].set_title(w, fontweight='bold')
             #axarrmed[row, col].set_axis_bgcolor('#B0B0B0')
         fmed.set_size_inches(35, 18)
