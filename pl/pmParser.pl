@@ -5,7 +5,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 31 Dec. 2014
+# Updated on 16 Mar. 2015
 
 use warnings;
 use strict;
@@ -358,7 +358,7 @@ else {
         push(@filepaths, "$opts->{dir}/$f");
     }
     # Check if directory was empty
-    &usage("Directory empty given") if $#filepaths == 0;
+    &usage("Directory empty given") if $#filepaths == -1;
 }
 
 # Check that files actually exist
