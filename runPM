@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 10 Apr. 2014
+# Updated on 16 Mar. 2015
 
 usage() {
     echo "
@@ -25,6 +25,7 @@ Optional
    -h, -?, --help          : This help message
    -m                      : Generate figures
    -p [plate_filename]     : Plate filepath
+   -t [input_file_type]    : Format number of PM plate format. Range: [1, $1]
    -v                      : Verbose output
 
 NOTES
@@ -100,12 +101,14 @@ verboseFlag=""
 debugFlag=""
 imageFlag=""
 num_replicates=1
+frmtype=1
+frmmax=2
 pythonexec="/usr/local/bin/python3.4"
 
 while [[ $# != 0 ]]; do
     case $1 in
     -h|-\?|--help)
-        usage
+        usage $frmmax
         exit 2
         ;;
     -c)
@@ -142,13 +145,18 @@ while [[ $# != 0 ]]; do
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -p value" >&2 && usage && exit 2
         plate=$1
         ;;
+    -t)
+        shift
+        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -t value" >&2 && usage && exit 2
+        frmtype=$1
+        ;;
     -v)
         verbose=0;
         verboseFlag="-v"
         ;;
     *)
         echo "Unknown option $1" >&2
-        usage
+        usage $frmmax
         exit 2
     esac
     shift
@@ -163,7 +171,7 @@ fi
 if [[ ! $inputfiledir ||
     ! $outputname ||
     ! $outputdir ]]; then
-    usage
+    usage $frmmax
     exit 2
 fi
 
@@ -186,17 +194,32 @@ for f in ${inputfile[@]}; do
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 done
 
+# Check which parser to use
+case $frmtype in
+    1)
+        p_script="pmParser.pl"
+        ;;
+    2)
+        p_script="well_vs_time_parser.pl"
+        ;;
+    *)
+        echo "Format type must be an integer within the range [1, $frmmax]." >&2
+        usage $frmmax
+        exit 2
+esac
+
 ################################################
 #ANALYST PARSING
 ################################################
 
 getTime && echo "${currtime}    *****Parsing analyst files*****" >&1
 out="raw_curves_${outputname}.txt"
+
 # Check if plate was supplied
 if [[ $plate ]]; then
-    cmd="${plscriptdir}/pmParser.pl -d $inputfiledir -p $plate > $outputdir/${out}"
+    cmd="${plscriptdir}/${p_script} -d $inputfiledir -p $plate > $outputdir/${out}"
 else
-    cmd="${plscriptdir}/pmParser.pl -d $inputfiledir > $outputdir/${out}"
+    cmd="${plscriptdir}/${p_script} -d $inputfiledir > $outputdir/${out}"
 fi
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd
