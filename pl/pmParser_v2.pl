@@ -188,14 +188,10 @@ sub readData {
             }
             push(@{$time->{$name}->{$rep}}, $currTime);
 
-            print STDERR "===${name}_$rep===\n";
-            print STDERR join("\t", @dataPoints);
-            print STDERR "\n==================\n";
             foreach my $idx ( 0..$#dataPoints ) {
                 # Should be 96
                 my $w = $wells->[$idx];
                 my $d = $dataPoints[$idx];
-                print STDERR $d."\n";
                 if( !defined $data->{$name}->{$rep}->{$w} ) {
                     $data->{$name}->{$rep}->{$w} = [$d];
                 }
@@ -206,75 +202,6 @@ sub readData {
             # Reset for next plate info
             $plateIdx = ($plateIdx + 1) % $nPlates;
         }
-
-
-
-
-
-#        chomp;
-#        next if /^$/;
-#        if( !$dataFound && $_ !~ /Temperature/ ) {
-#            # Skip lines until Time line is found
-#            next;
-#        }
-#        elsif( !$dataFound ) {
-#            # Temperature and well line is found here, so data comes after
-#            $dataFound = 1;
-#            next;
-#        }
-#        else {
-#            if( !$needTime ) {
-#                # At the data line now
-#                @dataPoints = split(/\t/);
-#                # Remove blank items
-#                pop @dataPoints;
-#                shift @dataPoints;
-#                # Remove temperature
-#                shift @dataPoints;
-#                ++$lineIdx;
-#                # Get sample name and replicate
-#                $name = $sNames->[$plateIdx]{name};
-#                $rep = $sNames->[$plateIdx]{rep};
-#                print STDERR "name=$name\trep=$rep\n";
-#                $needTime = 1;
-#            }
-#            else {
-#                # Get time from line
-#                (my $readTime) = /(\d{1,2}\/\d{1,2}\/\d{4} \d{1,2}:\d{2}:\d{2} \w{2})/;
-#                my $recTime = str2time($readTime);
-#                my $currTime;
-#                # Store time difference
-#                if( !defined $time->{$name}->{$rep} ) {
-#                    $time->{$name}->{$rep} = [];
-#                    $t0->{$name}->{$rep} = $recTime;
-#                    $currTime = "0.0";
-#                }
-#                else {
-#                    $currTime = ($recTime - $t0->{$name}->{$rep}) / 3600;
-#                    $currTime = sprintf("%.1f", $currTime);
-#                }
-#                push(@{$time->{$name}->{$rep}}, $currTime);
-#
-#                shift @dataPoints;  # Second value is temperature reading
-#
-#                # Insert values into data hash
-#                my $numWells = scalar @$wells;  # Should be 96
-#                foreach my $idx ( 0..$numWells-1 ) {
-#                    my $w = $wells->[$idx];
-#                    my $d = $dataPoints[$idx];
-#                    if( !defined $data->{$name}->{$rep}->{$w} ) {
-#                        $data->{$name}->{$rep}->{$w} = [$d];
-#                    }
-#                    else {
-#                        push(@{$data->{$name}->{$rep}->{$w}}, $d);
-#                    }
-#                }
-#                # Reset for next plate info
-#                $needTime = 0;
-#                $dataFound = 0;
-#                $plateIdx = ($plateIdx + 1) % $nPlates;
-#            }
-#        }
     }
     close(FILE);
 }
@@ -312,6 +239,16 @@ sub printData {
             }
         }
     }
+}
+
+
+###
+# Custom sorting method for files
+###
+sub fileSorter {
+    my ($a_name, $a_rep) = $a =~ /(\w+)_(\d+).txt$/;
+    my ($b_name, $b_rep) = $b =~ /(\w+)_(\d+).txt$/;
+    return $a_name cmp $b_name || $a_rep <=> $b_rep;
 }
 
 ###################################################
@@ -409,7 +346,8 @@ foreach my $w1 ("A".."H") {
 }
 
 # Read in data for each file
-foreach my $f ( sort @filepaths ) {
+my @sortFs =  sort { fileSorter } @filepaths;
+foreach my $f ( @sortFs ) {
     &readData($f, $data, $time, $t0,
               $wells, $opts->{nplates}, $samples);
 }
