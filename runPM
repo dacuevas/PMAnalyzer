@@ -4,10 +4,11 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 10 Apr. 2014
+# Updated on 24 Mar. 2015
 
 usage() {
-    echo "
+    echo "$2
+
 usage: $scriptname -c config_filename [Options]
 OR
 usage: $scriptname -i PM_data_directory -n output_directory -o output_name [Options]
@@ -16,7 +17,7 @@ Required
    -c [config_filename]    : Configuration file listing all parameters (this takes precedence)
    OR
    -i [PM_data_directory]  : PM data directory path to files
-   -n [output_directory]   : Output directory (will create if non-existent)
+   -d [output_directory]   : Output directory (will create if non-existent)
    -o [output_name]        : Suffix appended to all output files
 
 Optional
@@ -24,7 +25,10 @@ Optional
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
    -m                      : Generate figures
+   -n [number of plates]   : Number of plates [used with some parsers]
    -p [plate_filename]     : Plate filepath
+   -s [sample_filename]    : Sample name and replicate file [used with some parsers]
+   -t [input_file_type]    : Format number of PM plate format. Range: [1, $1]
    -v                      : Verbose output
 
 NOTES
@@ -99,19 +103,27 @@ filterflag=""
 verboseFlag=""
 debugFlag=""
 imageFlag=""
-num_replicates=1
+numplates=""
+frmtype=1
+frmmax=3
+samplefile=""
 pythonexec="/usr/local/bin/python3.4"
 
 while [[ $# != 0 ]]; do
     case $1 in
     -h|-\?|--help)
-        usage
+        usage $frmmax
         exit 2
         ;;
     -c)
         shift
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing config filename" >&2 && usage && exit 2
         configfile=$1
+        ;;
+    -d)
+        shift
+        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -d value" >&2 && usage && exit 2
+        outputdir=$1
         ;;
     --debug)
         debugFlag="--debug"
@@ -130,7 +142,7 @@ while [[ $# != 0 ]]; do
     -n)
         shift
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -n value" >&2 && usage && exit 2
-        outputdir=$1
+        numplates=$1
         ;;
     -o)
         shift
@@ -142,13 +154,23 @@ while [[ $# != 0 ]]; do
         [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -p value" >&2 && usage && exit 2
         plate=$1
         ;;
+    -s)
+        shift
+        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -s value" >&2 && usage && exit 2
+        samplefile=$1
+        ;;
+    -t)
+        shift
+        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -t value" >&2 && usage && exit 2
+        frmtype=$1
+        ;;
     -v)
         verbose=0;
         verboseFlag="-v"
         ;;
     *)
         echo "Unknown option $1" >&2
-        usage
+        usage $frmmax
         exit 2
     esac
     shift
@@ -163,7 +185,13 @@ fi
 if [[ ! $inputfiledir ||
     ! $outputname ||
     ! $outputdir ]]; then
-    usage
+    usage $frmmax "Missing one or more required arguments."
+    exit 2
+fi
+
+if [[ $frmtype -eq 3 ]] &&
+    [[ ! $numplates || ! $samplefile ]]; then
+    usage $frmmax "Missing -n and/or -s options."
     exit 2
 fi
 
@@ -176,15 +204,45 @@ checkOutputDir $outputdir
 # Check if script direectory exists
 checkScriptDir $pyscriptdir
 
+# Check for UTF-8 encodings
+getTime && echo "${currtime}    *****Checking character encodings*****" >&1
+for f in ${inputfile[@]}; do
+    enc=$(file --mime $inputfiledir/$f | egrep -ic "utf-8|us-ascii")
+    if [[ $enc -eq 0 ]]; then
+        f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
+        cmd="iconv -f utf16 -t utf8 $inputfiledir/$f > tmp.txt && mv tmp.txt $inputfiledir/$f"
+        [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
+        eval $cmd
+        [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
+    fi
+done
+
 # Convert input files line endings from DOS to UNIX
 getTime && echo "${currtime}    *****Checking line endings*****" >&1
 for f in ${inputfile[@]}; do
     f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
-    cmd="perl -i -npe 's/\r\n?/\n/g' $inputfiledir/$f"
+    cmd="perl -i -pe 's/\r\n?/\n/g' $inputfiledir/$f"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
     eval $cmd
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 done
+
+# Check which parser to use
+case $frmtype in
+    1)
+        p_script="pmParser.pl"
+        ;;
+    2)
+        p_script="well_vs_time_parser.pl"
+        ;;
+    3)
+        p_script="pmParser_v2.pl -n $numplates -s $samplefile"
+        ;;
+    *)
+        echo "Format type must be an integer within the range [1, $frmmax]." >&2
+        usage $frmmax
+        exit 2
+esac
 
 ################################################
 #ANALYST PARSING
@@ -192,11 +250,12 @@ done
 
 getTime && echo "${currtime}    *****Parsing analyst files*****" >&1
 out="raw_curves_${outputname}.txt"
+
 # Check if plate was supplied
 if [[ $plate ]]; then
-    cmd="${plscriptdir}/pmParser.pl -d $inputfiledir -p $plate > $outputdir/${out}"
+    cmd="${plscriptdir}/${p_script} -d $inputfiledir -p $plate > $outputdir/${out}"
 else
-    cmd="${plscriptdir}/pmParser.pl -d $inputfiledir > $outputdir/${out}"
+    cmd="${plscriptdir}/${p_script} -d $inputfiledir > $outputdir/${out}"
 fi
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
 eval $cmd

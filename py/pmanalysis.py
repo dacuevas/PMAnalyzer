@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 27 Jan. 2015
+# Updated on 01 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -51,6 +51,56 @@ def printFiltered(pmData):
         fhFilter.write('\n')
     fhFilter.close()
 
+
+def curveFit(pmData, c, w, finalDataReps, finalDataMean):
+    # Iterate through replicates and determine logistic parameters for each
+    first = True
+    for rep in pmData.replicates[c]:
+        if debugOut and plateFlag:
+            (ms, gc) = pmData.wells[w]
+            info = '\t'.join(c, rep, ms, gc, w)
+            util.printStatus('DEBUG: Processing {}'.format(info))
+        elif debugOut:
+            info = '\t'.join(c, rep, w)
+            util.printStatus('DEBUG: Processing {}.'.format(info))
+
+        # Create GrowthCurve object for sample
+        currCurve = pmData.getODCurve(c, w, rep)
+        gCurve = GrowthCurve.GrowthCurve(currCurve, pmData.time)
+
+        # Save sample GrowthCurve object for records
+        finalDataReps[c][w][rep] = gCurve
+
+        # Add to temporary multi-dim array for calculating mean
+        if first:
+            tempRepData = py.array([gCurve.y0,
+                                    gCurve.asymptote,
+                                    gCurve.maxGrowthRate,
+                                    gCurve.lag],
+                                   ndmin=2)
+            first = False
+        else:
+            add = [gCurve.y0, gCurve.asymptote,
+                   gCurve.maxGrowthRate, gCurve.lag]
+            tempRepData = py.concatenate((tempRepData, [add]))
+
+        if debugOut:
+            msg = 'a={}, mgr={}, lag={}'.format(gCurve.asymptote,
+                                                gCurve.maxGrowthRate,
+                                                gCurve.lag)
+            util.printStatus('DEBUG: parameters for '
+                             '{} {} {}: {}'.format(c, rep, w, msg))
+
+    # Create logistic curve from replicates' mean parameters
+    meanParams = py.mean(tempRepData, axis=0)
+    finalDataMean[c][w]['curve'] = GrowthCurve.logistic(pmData.time,
+                                                        *meanParams[0:4])
+    # Determine growth level
+    gl = GrowthCurve.calcGrowth(finalDataMean[c][w]['curve'],
+                                meanParams[1])
+    meanParams = py.concatenate((meanParams, [gl]))
+    finalDataMean[c][w]['params'] = meanParams
+    return (finalDataReps, finalDataMean)
 
 ###############################################################################
 # Argument Parsing
@@ -121,7 +171,8 @@ if filterFlag:
 
     util.printStatus('Filtering complete.')
     if verbose:
-        util.printStatus('Filtered {} growth curves.'.format(pmData.numFiltered))
+        util.printStatus('Filtered {} growth '
+                         'curves.'.format(pmData.numFiltered))
 
 elif verbose:
     util.printStatus('Filtering option not given -- no filtering performed.')
@@ -133,54 +184,15 @@ finalDataReps = {}
 finalDataMean = {}
 # Iterate through clones
 for c in pmData.clones:
-    finalDataReps[c] = {}
-    finalDataMean[c] = {}
+    finalDataReps[c] = {w: {} for w in pmData.wells}
+    finalDataMean[c] = {w: {} for w in pmData.wells}
 
     # Iterate through media sources
     for w in pmData.wells:
-        if plateFlag:
-            (ms, gc) = pmData.wells[w]
+        (finalDataReps, finalDataMean) = curveFit(pmData, c, w,
+                                                  finalDataReps,
+                                                  finalDataMean)
 
-        finalDataReps[c][w] = {}
-        finalDataMean[c][w] = {}
-
-        # Iterate through replicates and determine logistic parameters for each
-        tempRepData = py.array([], ndmin=2)
-        first = True
-        for rep in pmData.replicates[c]:
-            if debugOut and plateFlag:
-                util.printStatus('DEBUG: Processing {}\t{}\t{}\t{}\t{}.'.format(c, rep, ms, gc, w))
-            elif debugOut:
-                util.printStatus('DEBUG: Processing {}\t{}\t{}.'.format(c, rep, w))
-
-            # Create GrowthCurve object for sample
-            currCurve = pmData.getODCurve(c, w, rep)
-            gCurve = GrowthCurve.GrowthCurve(currCurve, pmData.time)
-
-            # Save sample GrowthCurve object for records
-            finalDataReps[c][w][rep] = gCurve
-
-            # Add to temporary multi-dim array for calculating mean
-            if first:
-                tempRepData = py.array([gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate,
-                                        gCurve.lag], ndmin=2)
-                first = False
-            else:
-                add = [gCurve.y0, gCurve.asymptote, gCurve.maxGrowthRate, gCurve.lag]
-                tempRepData = py.concatenate((tempRepData, [add]))
-
-            if debugOut:
-                msg = 'a={}, mgr={}, lag={}'.format(gCurve.asymptote,
-                                                    gCurve.maxGrowthRate,
-                                                    gCurve.lag)
-                util.printStatus('DEBUG: parameters for {} {} {}: {}'.format(c, rep, w, msg))
-        # Create logistic curve from replicates' mean parameters
-        meanParams = py.mean(tempRepData, axis=0)
-        finalDataMean[c][w]['curve'] = GrowthCurve.logistic(pmData.time, *meanParams[0:4])
-        # Determine growth level
-        gl = GrowthCurve.calcGrowth(finalDataMean[c][w]['curve'], meanParams[1])
-        meanParams = py.concatenate((meanParams, [gl]))
-        finalDataMean[c][w]['params'] = meanParams
 util.printStatus('Processing complete.')
 
 
@@ -200,24 +212,28 @@ else:
     plateInfo = 'well'
 
 # logistic_params_sample file: logistic curve parameters for each sample
-fhLPSample = open('{}/logistic_params_sample_{}.txt'.format(outDir, outSuffix), 'w')
+fhLPSample = open('{}/logistic_params_sample_'
+                  '{}.txt'.format(outDir, outSuffix), 'w')
 fhLPSample.write('sample\treplicate\t{}\ty0\tlag\t'.format(plateInfo))
 fhLPSample.write('maximumgrowthrate\tasymptote\tgrowthlevel\tsse\tgrowth\n')
 
 # logistic_curves_sample file: logistic curves for each sample
-fhLCSample = open('{}/logistic_curves_sample_{}.txt'.format(outDir, outSuffix), 'w')
+fhLCSample = open('{}/logistic_curves_sample_'
+                  '{}.txt'.format(outDir, outSuffix), 'w')
 fhLCSample.write('sample\treplicate\t{}\t'.format(plateInfo))
 fhLCSample.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLCSample.write('\n')
 
 # logistic_params_mean file. logistic curve parameters (mean)
-fhLPMean = open('{}/logistic_params_mean_{}.txt'.format(outDir, outSuffix), 'w')
+fhLPMean = open('{}/logistic_params_mean_'
+                '{}.txt'.format(outDir, outSuffix), 'w')
 fhLPMean.write('sample\t{}\ty0\tlag\t'.format(plateInfo))
 fhLPMean.write('maximumgrowthrate\tasymptote\tgrowthlevel\tgrowth\n')
 
 
 # logistic_curves_mean file. logistic curve (mean)
-fhLCMean = open('{}/logistic_curves_mean_{}.txt'.format(outDir, outSuffix), 'w')
+fhLCMean = open('{}/logistic_curves_mean_'
+                '{}.txt'.format(outDir, outSuffix), 'w')
 fhLCMean.write('sample\t{}\t'.format(plateInfo))
 fhLCMean.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLCMean.write('\n')
@@ -228,15 +244,15 @@ if plateFlag:
 else:
     ws = [(x[0], int(x[1:])) for x in pmData.wells]
 sortW = sorted(ws, key=operator.itemgetter(0, 1))
+sortW = ['{}{}'.format(x[0], x[1]) for x in sortW]
 # Iterate through clones
 for c, wellDict in finalDataReps.items():
     # Iterate through wells
     for w in sortW:
-        w = "{}{}".format(w[0], w[1])
         if plateFlag:
             (ms, gc) = pmData.wells[w]
             pn = pmData.plateName[c]
-            pInfo = '{}\t{}\t{}\t{}'.format(ms, gc, pn, w)
+            pInfo = '\t'.join(ms, gc, pn, w)
         else:
             pInfo = w
 
@@ -302,27 +318,90 @@ for c, wellDict in finalDataReps.items():
                                         for x in curve.dataLogistic]))
             fhLCSample.write('\n')
 
+# Close output file handles
 fhLPSample.close()
 fhLCSample.close()
 fhLPMean.close()
 fhLCMean.close()
 util.printStatus('Output files complete')
 
+# Check if images need to be generated
 if imagesFlag:
     util.printStatus('Generating growth level heatmap...')
     PMFigures.heatMap(finalDataMean, pmData, sortW, outDir, plateFlag)
-    util.printStatus('Generating samples\' growth curves...')
-    PMFigures.curvePlot(finalDataReps, sortW, pmData.time, outDir)
-    util.printStatus('Generating median growth curves...')
-    PMFigures.curvePlot2(finalDataReps, sortW, pmData.time,
-                         py.median, outDir, name='median')
-    PMFigures.curvePlot3(finalDataReps, sortW, pmData.time,
-                         py.median, outDir, name='median')
-    util.printStatus('Generating average growth curves...')
-    PMFigures.curvePlot2(finalDataReps, sortW, pmData.time,
-                         py.mean, outDir, name='mean')
-    PMFigures.curvePlot3(finalDataReps, sortW, pmData.time,
-                         py.mean, outDir, name='mean')
+
+    ###########################################################################
+    # Each growth curve plot uses as input a dictionary in the format:
+    #     { 'sample_name' :
+    #         { 'well_1' : [ ordered OD values ],
+    #           'well_2' : [ ordered OD values ],
+    #           ...
+    #         },
+    #         ...
+    #     }
+    # Note: lists of OD values are numpy arrays
+    ###########################################################################
+
+    util.printStatus('Generating samples growth curves...')
+    plotData = {}  # Use as input into curve plotter
+    for c in finalDataReps:  # c = sample
+        for w in sortW:  # w = well
+            for r in sorted(finalDataReps[c][w]):  # r = rep
+                curve = finalDataReps[c][w][r].rawcurve
+                if r in plotData:
+                    plotData[r][w] = curve
+                else:
+                    plotData[r] = {w: curve}
+        outpath = '{}/{}_growthcurves.png'.format(outDir, c)
+        title = c  # Super title of plot
+        PMFigures.curvePlotter(plotData, sortW, pmData.time,
+                               outpath, title, None)
+
+    # Plot data for median and average data
+    util.printStatus('Generating median and average growth curves...')
+    plotData = {'med': {}, 'avg': {}}
+    for c in finalDataReps:
+        # Plot data for individual samples
+        # Use to plot median and average curves with error bars
+        plotIndivData = {'med': {c: {w: {} for w in sortW}},
+                         'avg': {c: {w: {} for w in sortW}}}
+        for w in sortW:
+            for rIdx, r in enumerate(finalDataReps[c][w]):
+                curve = finalDataReps[c][w][r].rawcurve
+                if rIdx == 0:
+                    # Initialize numpy array for first
+                    allarray = py.array([curve], ndmin=2)
+                else:
+                    allarray = py.concatenate((allarray, [curve]))
+            # After getting all replicates,
+            # calculate median and standard deviation
+            medcurve = py.median(allarray, axis=0)
+            avgcurve = py.mean(allarray, axis=0)
+            stddev = py.std(allarray, axis=0)
+            if c in plotData['med']:
+                plotData['med'][c][w] = medcurve
+                plotData['avg'][c][w] = avgcurve
+            else:
+                plotData['med'][c] = {w: medcurve}
+                plotData['avg'][c] = {w: avgcurve}
+            plotIndivData['med'][c][w] = medcurve
+            plotIndivData['avg'][c][w] = avgcurve
+        outpath = '{}/{}_median_growthcurves.png'.format(outDir, c)
+        title = '{} Median'.format(c)
+        PMFigures.curvePlotter(plotIndivData['med'], sortW, pmData.time,
+                               outpath, title, stddev)
+        outpath = '{}/{}_average_growthcurves.png'.format(outDir, c)
+        title = '{} Average'.format(c)
+        PMFigures.curvePlotter(plotIndivData['avg'], sortW, pmData.time,
+                               outpath, title, stddev)
+    outpath = '{}/all_median_growthcurves'.format(outDir)
+    title = 'Median'
+    PMFigures.curvePlotter(plotData['med'], sortW, pmData.time,
+                           outpath, title, None)
+    outpath = '{}/all_average_growthcurves'.format(outDir)
+    title = 'Average'
+    PMFigures.curvePlotter(plotData['avg'], sortW, pmData.time,
+                           outpath, title, None)
 
 util.printStatus('Printing complete.')
 util.printStatus('Analysis complete.')

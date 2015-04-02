@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 29 Dec. 2014
-# Updated on 26 Jan. 2015
+# Updated on 01 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
 import sys
@@ -22,7 +22,8 @@ def heatMap(data, pmData, wells, outDir, plateFlag):
     if plateFlag:
         # Get growth condition
         tmp = ['{}-{}'.format(w, pmData.wells[w][1]) for w in wellids]
-        wellLabels = [x if len(x) <= 20 else '{}...'.format(x[:18]) for x in tmp]
+        wellLabels = [x if len(x) <= 20 else '{}...'.format(x[:18])
+                      for x in tmp]
     else:
         wellLabels = wellids
 
@@ -69,7 +70,11 @@ def heatMap(data, pmData, wells, outDir, plateFlag):
     # Create heatmap object using pcolor
     # Find maximum growth level value
     maxGL = py.amax(plotData) + 0.1
-    hm = ax.pcolor(plotData, cmap=plt.cm.Greys, edgecolor='black', vmin=0, vmax=maxGL)
+    hm = ax.pcolor(plotData,
+                   cmap=plt.cm.Greys,
+                   edgecolor='black',
+                   vmin=0,
+                   vmax=maxGL)
 
     # Create color bar legend
     ###mini = py.amin(plotData)
@@ -92,165 +97,149 @@ def heatMap(data, pmData, wells, outDir, plateFlag):
     ax.set_yticks(py.arange(0, numClones) + 0.5)
 
     # Set tick labels
-    ax.set_xticklabels(labels=wellLabels, minor=False, rotation=90, fontsize=xfontsize)
+    ax.set_xticklabels(labels=wellLabels,
+                       minor=False,
+                       rotation=90,
+                       fontsize=xfontsize)
     ax.set_yticklabels(labels=clones, minor=False, fontsize=yfontsize)
     ax.axis('tight')
     # Remove tick marks lines
-    plt.tick_params(axis='both', left='off', right='off', bottom='off', top='off')
+    plt.tick_params(axis='both',
+                    left='off',
+                    right='off',
+                    bottom='off',
+                    top='off')
 
-    plt.savefig('{}/growthlevels.png'.format(outDir), dpi=100, bbox_inches='tight')
+    plt.savefig('{}/growthlevels.png'.format(outDir),
+                dpi=200,
+                bbox_inches='tight')
 
 
-def curvePlot(data, wells, time, outDir):
-    '''Plot growth curve plots on multi-faceted figure. Separate graphs based on well.
-    Plot clone replicates together.'''
+def curvePlotter(data, wells, time, filepath, title, ebars=None):
+    '''Plot growth curve plots on multi-faceted figure.
+    Separate graphs based on well.
+    Plot clone replicates together.
+
+    Keyword arguments:
+    data -- multi-level dictionary of numpy arrays
+            {sample names: {wells: [OD values]}}
+    wells -- sorted list of well ids
+    time -- numpy array of time in hours
+    filepath -- filepath to save figure as
+    ebars -- include error bars as numpy array(default: None)
+    '''
     # Define colors and line types here
     colors = ['r', 'b', 'g', 'k']
     shapes = ['.--', '.--', '.--', '.--']
 
-    wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
-
     # Any values greater than 2 or less than 0.05 will be None
-    newdata = data
-    newdata = maskOD(newdata)
-    # Find high value for plotting
+    newdata = maskOD(data)
+    # Find highest OD value for y-axis scale limit
     hi = findHighOD(newdata) + 0.15
-    for c in newdata:
-        # Create figure and axis
-        f, axarr = plt.subplots(8, 12, sharex=True, sharey=True)
-        for idx, w in enumerate(wellids):
+
+    # Create figure and axis objects
+    # 96 growth curves organized in 8 rows and 12 columns
+    f, axarr = plt.subplots(8, 12, sharex=True, sharey=True)
+
+    ###########################################################################
+    ### Begin iterating through data
+    ###########################################################################
+    ### First key of dictionary is sample name
+    for idx, c in enumerate(newdata):
+        # Determine color and shape of line based on current curve
+        clr = colors[(idx % 4)]
+        shp = shapes[(idx % 4)]
+
+        ### Second key of dictionary is well id
+        for wIdx, w in enumerate(wells):
+            # Calculate which subplot using well id index
             # row & col for subplot number
             # row-major order
-            row = int(py.floor(idx / 12))
-            col = int(idx % 12)
+            row = int(py.floor(wIdx / 12))
+            col = int(wIdx % 12)
 
-            # Ieterate through replicates (sorted alphabetically)
-            for cidx, rep in enumerate(sorted(newdata[c][w])):
-                # Determine color and shape of line
-                clr = colors[(cidx % 4)]
-                shp = shapes[(cidx % 4)]
-                curve = newdata[c][w][rep].rawcurve
-                axarr[row, col].plot(time, curve, '{}{}'.format(clr, shp), linewidth=1.5, label=rep)
-                axarr[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
-                axarr[row, col].set_ylim((0, hi))
-                axarr[row, col].set_title(w, fontweight='bold')
-                #axarr[row, col].set_axis_bgcolor('#B0B0B0')
-        f.set_size_inches(35, 18)
-        axarr[7, 0].set_xlabel('Time (hr)', fontweight='bold')
-        axarr[7, 0].set_ylabel(r'OD$_{600nm}$', fontweight='bold')
-        plt.legend(bbox_to_anchor=(1, 4.5), loc='center left', fancybox=True)
-        plt.savefig('{}/{}_growthcurves.png'.format(outDir, c), dpi=100, bbox_inches='tight')
-        plt.clf()  # Clear plot for next sample
+            # Get curve numpy array
+            curve = newdata[c][w]
 
+            # Create plot of curve
+            # Set color, shape, linewidth, and label (for legend)
+            axarr[row, col].plot(time, curve,
+                                 '{}{}'.format(clr, shp),
+                                 linewidth=4,
+                                 label=c)
 
-def curvePlot2(data, wells, time, func, outDir, name):
-    '''Plot growth curve plots on multi-faceted figure.
-    Separate graphs based on well. Function applied to curves (median, mean).'''
-    # Define colors and line types here
-    colors = ['r', 'b', 'g', 'k']
-    shapes = ['.--', '.--', '.--', '.--']
+            # Add ebars to plot if they are supplied
+            if ebars is not None:
+                axarr[row, col].errorbar(time, curve,
+                                         yerr=ebars,
+                                         linestyle='None',
+                                         ecolor='#888888')
 
-    wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
-    # Create curves
-    fmed, axarrmed = plt.subplots(8, 12, sharex=True, sharey=True)
+            # Set tick label size and to only show tick labels
+            # (time and OD) on the first column and last row
+            axarr[row, col].tick_params(axis='both',
+                                        left='on',
+                                        right='off',
+                                        bottom='on',
+                                        top='off',
+                                        labelsize=20)
 
-    # Any values greater than 2 or less than 0.05 will be None
-    newdata = data
-    newdata = maskOD(newdata)
-    # Find high value for plotting
-    hi = findHighOD(newdata) + 0.15
-    for cidx, c in enumerate(sorted(newdata)):
-        for idx, w in enumerate(wellids):
-            row = int(py.floor(idx / 12))
-            col = int(idx % 12)
-            for ridx, rep in enumerate(newdata[c][w]):
-                curve = newdata[c][w][rep].rawcurve
-                if ridx == 0:
-                    medarray = py.array([curve], ndmin=2)
-                else:
-                    medarray = py.concatenate((medarray, [curve]))
-            mcurve = func(medarray, axis=0)
-            clr = colors[(cidx % 4)]
-            shp = shapes[(cidx % 4)]
-            axarrmed[row, col].plot(time, mcurve, '{}{}'.format(clr, shp), linewidth=1.5, label=c)
-            axarrmed[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
-            axarrmed[row, col].set_ylim((0, hi))
-            axarrmed[row, col].set_title(w, fontweight='bold')
-            #axarrmed[row, col].set_axis_bgcolor('#B0B0B0')
-    fmed.set_size_inches(35, 18)
-    axarrmed[7, 0].set_xlabel('Time (hr)', fontweight='bold')
-    axarrmed[7, 0].set_ylabel(r'OD$_{600nm}$', fontweight='bold')
-    plt.legend(bbox_to_anchor=(1, 4.5), loc='center left', fancybox=True)
-    plt.savefig('{}/{}_growthcurves.png'.format(outDir, name), dpi=100, bbox_inches='tight')
+            # Set the y-axis limits to 0 and highest value + 0.15
+            axarr[row, col].set_ylim((0, hi))
 
-def curvePlot3(data, wells, time, func, outDir, name):
-    '''Plot growth curve plots on multi-faceted figure. One plot per sample.
-    Separate graphs based on well. Function applied to curves (median, mean).'''
-    # Define colors and line types here
-    colors = ['r', 'b', 'g', 'k']
-    shapes = ['.--', '.--', '.--', '.--']
+            # Set the title of the subplot with the well id
+            axarr[row, col].set_title(w, fontweight='bold', fontsize=20)
 
-    wellids = ['{}{}'.format(w[0], w[1]) for w in wells]
-    # Create curves
+            # Rotate the x-axis tick labels (time) 90 degrees
+            plt.setp(axarr[row, col].xaxis.get_majorticklabels(),
+                     rotation=90)
 
-    # Any values greater than 2 or less than 0.05 will be None
-    newdata = data
-    newdata = maskOD(newdata)
-    # Find high value for plotting
-    hi = findHighOD(newdata) + 0.15
-    for cidx, c in enumerate(sorted(newdata)):
-        fmed, axarrmed = plt.subplots(8, 12, sharex=True, sharey=True)
-        for idx, w in enumerate(wellids):
-            row = int(py.floor(idx / 12))
-            col = int(idx % 12)
-            for ridx, rep in enumerate(sorted(newdata[c][w])):
-                curve = newdata[c][w][rep].rawcurve
-                if ridx == 0:
-                    medarray = py.array([curve], ndmin=2)
-                else:
-                    medarray = py.concatenate((medarray, [curve]))
-            mcurve = func(medarray, axis=0)
-            clr = colors[3]
-            shp = shapes[3]
-            axarrmed[row, col].plot(time, mcurve, '{}{}'.format(clr, shp), linewidth=1.5)
-            axarrmed[row, col].errorbar(time, mcurve,
-                                        yerr=py.std(medarray, axis=0),
-                                        linestyle='None',
-                                        ecolor='#888888')
-            axarrmed[row, col].tick_params(axis='both', left='on', right='off', bottom='on', top='off')
-            axarrmed[row, col].set_ylim((0, hi))
-#            axarrmed[row, col].set_xlim((0, time))
-            axarrmed[row, col].set_title(w, fontweight='bold')
-            #axarrmed[row, col].set_axis_bgcolor('#B0B0B0')
-        fmed.set_size_inches(35, 18)
-        axarrmed[7, 0].set_xlabel('Time (hr)', fontweight='bold')
-        axarrmed[7, 0].set_ylabel(r'OD$_{600nm}$', fontweight='bold')
-        #plt.legend(bbox_to_anchor=(1, 4.5), loc='center left', fancybox=True)
-        plt.savefig('{}/{}_{}_growthcurves.png'.format(outDir, c, name), dpi=100, bbox_inches='tight')
+    # Set figure size in inches to width=48 and height=20
+    f.set_size_inches(48, 20)
+
+    # Set the axes legends on the bottom left subplot
+    axarr[7, 0].set_xlabel('Time (hr)', fontweight='bold', fontsize=25)
+    axarr[7, 0].set_ylabel(r'OD (600nm)', fontweight='bold', fontsize=25)
+    # Below is using Latex
+    ###axarr[7, 0].set_ylabel(r'OD$_{600nm}$', fontweight='bold', fontsize=25)
+
+    # Set legend location
+    plt.legend(bbox_to_anchor=(1, 4.5),
+               loc='center left',
+               fancybox=True,
+               prop={'size': 20})
+
+    # Set main title
+    plt.suptitle(title, fontsize=30, fontweight='bold', y=0.95)
+
+    # Save the figure using the given figure name
+    # Set resolution at 200 DPI
+    # Set bbox to 'tight' to remove additional white space
+    plt.savefig('{}'.format(filepath),
+                dpi=200,
+                bbox_inches='tight')
+    plt.clf()  # Clear plot for next sample
 
 
 def findHighOD(data):
     '''Find the highest OD value to set for plots'''
     hi = 0
     for c, wDict in data.items():
-        for w, rDict in wDict.items():
-            for r in rDict:
-                max = py.amax(rDict[r].rawcurve)
-                if max > hi:
-                    hi = max
+        for w, curve in wDict.items():
+            max = py.amax(curve)
+            if max > hi:
+                hi = max
     return hi
 
 
 def maskOD(data):
     '''Mask too large/small values for plots'''
     for c, wDict in data.items():
-        for w, rDict in wDict.items():
-            for r in rDict:
-                rDict[r].rawcurve[(rDict[r].rawcurve > 2)
-                                  | (rDict[r].rawcurve < 0.01)
-                                  ] = None
-                # TODO: Report masks when they occur
-                if py.isnan(py.sum(rDict[r].rawcurve)):
-                    print('Masking value with "nan" in {} -- {} -- {}'.format(c, w, r),
-                          file=sys.stderr)
+        for w, curve in wDict.items():
+            curve[(curve > 2) | (curve < 0.01)] = None
+            # TODO: Report masks when they occur
+            if py.isnan(py.sum(curve)):
+                msg = ('Masking value with "nan" in '
+                       '{} -- {}'.format(c, w))
+                print(msg, file=sys.stderr)
     return data
