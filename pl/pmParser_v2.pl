@@ -5,7 +5,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 18 Mar. 2015
-# Updated on 18 Mar. 2015
+# Updated on 02 Apr. 2015
 #
 #
 ###############################################################
@@ -246,8 +246,8 @@ sub printData {
 # Custom sorting method for files
 ###
 sub fileSorter {
-    my ($a_name, $a_rep) = $a =~ /(\w+)_(\d+).txt$/;
-    my ($b_name, $b_rep) = $b =~ /(\w+)_(\d+).txt$/;
+    my ($a_name, $a_rep) = $a =~ /([A-z0-9-]+)[_\s](\d+).txt$/;
+    my ($b_name, $b_rep) = $b =~ /([A-z0-9-]+)[_\s](\d+).txt$/;
     return $a_name cmp $b_name || $a_rep <=> $b_rep;
 }
 
