@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 29 Dec. 2014
-# Updated on 01 Apr. 2015
+# Updated on 03 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
 import sys
@@ -145,7 +145,7 @@ def curvePlotter(data, wells, time, filepath, title, ebars=None):
     ### Begin iterating through data
     ###########################################################################
     ### First key of dictionary is sample name
-    for idx, c in enumerate(newdata):
+    for idx, c in enumerate(sorted(newdata)):
         # Determine color and shape of line based on current curve
         clr = colors[(idx % 4)]
         shp = shapes[(idx % 4)]
