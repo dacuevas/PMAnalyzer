@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 01 Apr. 2015
+# Updated on 03 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -14,6 +14,7 @@ import GrowthCurve
 import PMFigures
 import operator
 import pylab as py
+import warnings
 
 
 ###############################################################################
@@ -135,6 +136,9 @@ verbose = args.verbose
 debugOut = args.debug
 plateFlag = args.plate
 imagesFlag = args.images
+
+# Set warnings filter for catching RuntimeWarnings
+warnings.filterwarnings('error')
 
 ###############################################################################
 # Data Processing
@@ -346,14 +350,14 @@ if imagesFlag:
     plotData = {}  # Use as input into curve plotter
     for c in finalDataReps:  # c = sample
         for w in sortW:  # w = well
-            for r in sorted(finalDataReps[c][w]):  # r = rep
+            for r in finalDataReps[c][w]:  # r = rep
                 curve = finalDataReps[c][w][r].rawcurve
                 if r in plotData:
                     plotData[r][w] = curve
                 else:
                     plotData[r] = {w: curve}
         outpath = '{}/{}_growthcurves.png'.format(outDir, c)
-        title = c  # Super title of plot
+        title = '{} Growth Curves'.format(c)  # Super title of plot
         PMFigures.curvePlotter(plotData, sortW, pmData.time,
                                outpath, title, None)
 
@@ -387,19 +391,19 @@ if imagesFlag:
             plotIndivData['med'][c][w] = medcurve
             plotIndivData['avg'][c][w] = avgcurve
         outpath = '{}/{}_median_growthcurves.png'.format(outDir, c)
-        title = '{} Median'.format(c)
+        title = '{} Growth Curves Using Median'.format(c)
         PMFigures.curvePlotter(plotIndivData['med'], sortW, pmData.time,
                                outpath, title, stddev)
         outpath = '{}/{}_average_growthcurves.png'.format(outDir, c)
-        title = '{} Average'.format(c)
+        title = '{} Growth Curves Using Average'.format(c)
         PMFigures.curvePlotter(plotIndivData['avg'], sortW, pmData.time,
                                outpath, title, stddev)
     outpath = '{}/all_median_growthcurves'.format(outDir)
-    title = 'Median'
+    title = 'Median Growth Curves'
     PMFigures.curvePlotter(plotData['med'], sortW, pmData.time,
                            outpath, title, None)
     outpath = '{}/all_average_growthcurves'.format(outDir)
-    title = 'Average'
+    title = 'Average Growth Curves'
     PMFigures.curvePlotter(plotData['avg'], sortW, pmData.time,
                            outpath, title, None)
 

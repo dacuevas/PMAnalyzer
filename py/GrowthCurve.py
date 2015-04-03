@@ -8,6 +8,7 @@
 
 
 from __future__ import absolute_import, division, print_function
+import PMUtil as util
 import pylab as py
 import scipy.optimize as optimize
 import sys
@@ -24,10 +25,15 @@ class GrowthCurve:
         self.asymptote = self.__calcAsymptote()
         self.maxGrowthRate, self.mgrTime = self.__calcMGR()
         self.asymptote, self.maxGrowthRate, self.lag = self.__calcParameters(
-            (self.asymptote, self.maxGrowthRate, 0.5), self.time, self.rawcurve)
+            (self.asymptote, self.maxGrowthRate, 0.5),
+            self.time,
+            self.rawcurve)
 
-        self.dataLogistic = logistic(self.time, self.y0,
-                                     self.asymptote, self.maxGrowthRate, self.lag)
+        self.dataLogistic = logistic(self.time,
+                                     self.y0,
+                                     self.asymptote,
+                                     self.maxGrowthRate,
+                                     self.lag)
         self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)
 
@@ -70,7 +76,8 @@ class GrowthCurve:
 
             # Growth rate calculation:
             # (log(i+3) - log(i)) / (time(i+3) - time(i))
-            gr = ((py.log(self.rawcurve[idx + 3]) - py.log(self.rawcurve[idx])) /
+            gr = ((py.log(self.rawcurve[idx + 3]) -
+                   py.log(self.rawcurve[idx])) /
                   (self.time[idx + 3] - self.time[idx]))
             if idx == 1 or gr > maxGR:
                 maxGR = gr
@@ -103,6 +110,19 @@ def logistic(t, y0, a, mgr, l):
     '''Logistic modeling'''
     startOD = y0
     exponent = ((mgr / a) * (l - t)) + 2
-    lg = startOD + ((a - startOD) /
-                    (1 + py.exp(exponent)))
+    try:
+        denom = 1 + py.exp(exponent)
+        lg = startOD + ((a - startOD) / denom)
+    except RuntimeWarning as rw:
+        util.printStatus('*' * 55)
+        util.printStatus('RuntimeWarning: {}'.format(rw))
+        util.printStatus('   Exponent value for logistic '
+                         'equation is {:.3f}'.format(exponent[0]))
+        util.printStatus('   This produces a large value in the denominator '
+                         'of the logistic equation')
+        util.printStatus('   Now setting logistic value to y0: '
+                         '{:.3f}'.format(startOD))
+        util.printStatus('*' * 55)
+        lg = startOD
+
     return lg
