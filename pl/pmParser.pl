@@ -5,7 +5,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 16 Mar. 2015
+# Updated on 10 Apr. 2015
 
 use warnings;
 use strict;
@@ -106,7 +106,7 @@ sub readPlate {
 # data hash-reference object
 ###
 sub readData {
-    my ($file, $data, $reps, $time) = @_;
+    my ($file, $data, $reps, $time, $t0) = @_;
     my ($name, $rep);
     my $fname = fileparse($file, qr/\.[^.]*/); # Capture file extension
 
@@ -130,8 +130,7 @@ sub readData {
 
     # Time difference is calculated to record relative time
     # instead of current time
-    my ($prevTime, $currTime, $bckgrnd);
-    my @timePoints;
+    my ($currTime, $bckgrnd);
     while( <FILE> ) {
         chomp;
         # Check for background
@@ -143,27 +142,26 @@ sub readData {
             # No longer in background
             $bckgrnd = 0;
             my $timeRead = str2time($1);
-            if( ! defined $prevTime ) {
-                push(@timePoints, "0.0");
+            if( ! defined $time->{$name}->{$rep} ) {
+                $time->{$name}->{$rep} = [];
+                $t0->{$name}->{$rep} = $timeRead;
                 $currTime = "0.0";
             }
             else {
-                my $diffTime = ($timeRead - $prevTime) / 3600;
-                $currTime = sprintf("%.1f", $timePoints[-1] + $diffTime);
-                push(@timePoints, $currTime);
+                $currTime = ($timeRead - $t0->{$name}->{$rep}) / 3600;
+                $currTime = sprintf("%.1f", $currTime);
             }
-            # Set new previous time
-            $prevTime = $timeRead;
+            push(@{$time->{$name}->{$rep}}, $currTime);
         }
         elsif( ! $bckgrnd && /(\w\d+)\s+([0-9.]+)/ ) {
             # Well = $1
             # Data = $2
             #print STDERR "Well $1, Data $2\n";
             #<>;
-            $data->{$name}->{$rep}->{$1}->{$currTime} = $2;
+            #$data->{$name}->{$rep}->{$1}->{$currTime} = $2;
+            push(@{$data->{$name}->{$rep}->{$1}}, $2);
         }
     }
-    @$time = @timePoints if @timePoints > @$time;
     close(FILE);
 }
 
@@ -268,15 +266,16 @@ sub calcMean {
 ###
 sub printData {
     my ($data, $plate, $pn, $reps, $time) = @_;
+    my $timeLen = scalar @$time;
     foreach my $c ( keys %$data ) {
         foreach my $r ( map { $_->[0] } sort {$a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } map { [$_,/([A-Za-z]+)/,/(\d+)/] } keys %{$data->{$c}} ) {
             # If the replicates flag is set then we are in the wells already
             if( $reps ) {
                 my $w = $r;
                 my @ods = ();
-                foreach my $t( @$time ) {
-                    my $val = ($data->{$c}->{$w}->{$t}) ?
-                                $data->{$c}->{$w}->{$t} :
+                foreach my $tIdx( 0..$timeLen-1 ) {
+                    my $val = ($data->{$c}->{$w}->[$tIdx]) ?
+                                $data->{$c}->{$w}->[$tIdx] :
                                 0;
                     push(@ods, $val);
                 }
@@ -290,9 +289,9 @@ sub printData {
             else {
                 foreach my $w ( map { $_->[0] } sort {$a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } map { [$_,/([A-Za-z]+)/,/(\d+)/] } keys %{$data->{$c}->{$r}} ) {
                     my @ods = ();
-                    foreach my $t( @$time ) {
-                        my $val = ($data->{$c}->{$r}->{$w}->{$t}) ?
-                                    $data->{$c}->{$r}->{$w}->{$t} :
+                    foreach my $tIdx ( 0..$timeLen-1 ) {
+                        my $val = ($data->{$c}->{$r}->{$w}->[$tIdx]) ?
+                                    $data->{$c}->{$r}->{$w}->[$tIdx] :
                                     0;
                         push(@ods, $val);
                     }
@@ -382,11 +381,12 @@ if( $opts->{plate} ) {
 ## Data extraction process
 ######################################################
 my $data = {};
-my @time;
+my $time = {};
+my $t0 = {};  # Starting time for each sample
 
 # Read in data for each file
 foreach my $f ( @filepaths ) {
-    &readData($f, $data, $opts->{reps}, \@time);
+    &readData($f, $data, $opts->{reps}, $time);
 }
 
 # If replicates exist, calculate median or mean
@@ -405,10 +405,18 @@ $plate ?
     print "sample\twell";
 
 # Print out hours
-foreach my $timeIter( @time ) {
+#foreach my $timeIter( @time ) {
+#    print "\t".sprintf("%.1f", $timeIter);
+#}
+# Print out hours
+# Just use first sample's time
+my @samples = keys %$time;
+my @sreps = keys %{$time->{$samples[0]}};
+my $ptime = $time->{$samples[0]}->{$sreps[0]};
+foreach my $timeIter( @$ptime ) {
     print "\t".sprintf("%.1f", $timeIter);
 }
 print "\n"; # End of header line
 
 # Print out data
-&printData($data, $plate, $plateName, $opts->{reps}, \@time);
+&printData($data, $plate, $plateName, $opts->{reps}, $ptime);
