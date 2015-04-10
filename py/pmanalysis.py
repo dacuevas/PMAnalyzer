@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 03 Apr. 2015
+# Updated on 10 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -256,7 +256,7 @@ for c, wellDict in finalDataReps.items():
         if plateFlag:
             (ms, gc) = pmData.wells[w]
             pn = pmData.plateName[c]
-            pInfo = '\t'.join(ms, gc, pn, w)
+            pInfo = '\t'.join((ms, gc, pn, w))
         else:
             pInfo = w
 
@@ -363,12 +363,13 @@ if imagesFlag:
 
     # Plot data for median and average data
     util.printStatus('Generating median and average growth curves...')
-    plotData = {'med': {}, 'avg': {}}
+    plotData = {'med': {}, 'avg': {}, 'err': {}}
     for c in finalDataReps:
         # Plot data for individual samples
         # Use to plot median and average curves with error bars
         plotIndivData = {'med': {c: {w: {} for w in sortW}},
-                         'avg': {c: {w: {} for w in sortW}}}
+                         'avg': {c: {w: {} for w in sortW}},
+                         'err': {c: {w: {} for w in sortW}}}
         for w in sortW:
             for rIdx, r in enumerate(finalDataReps[c][w]):
                 curve = finalDataReps[c][w][r].rawcurve
@@ -378,34 +379,39 @@ if imagesFlag:
                 else:
                     allarray = py.concatenate((allarray, [curve]))
             # After getting all replicates,
-            # calculate median and standard deviation
+            # calculate median and standard error
             medcurve = py.median(allarray, axis=0)
             avgcurve = py.mean(allarray, axis=0)
-            stddev = py.std(allarray, axis=0)
+            stderr = py.std(allarray, axis=0) / py.sqrt(len(allarray))
             if c in plotData['med']:
                 plotData['med'][c][w] = medcurve
                 plotData['avg'][c][w] = avgcurve
             else:
                 plotData['med'][c] = {w: medcurve}
                 plotData['avg'][c] = {w: avgcurve}
+                plotData['avg'][c] = {w: avgcurve}
             plotIndivData['med'][c][w] = medcurve
             plotIndivData['avg'][c][w] = avgcurve
+            plotIndivData['err'][c][w] = stderr
         outpath = '{}/{}_median_growthcurves.png'.format(outDir, c)
         title = '{} Growth Curves Using Median'.format(c)
         PMFigures.curvePlotter(plotIndivData['med'], sortW, pmData.time,
-                               outpath, title, stddev)
+                               outpath, title, plotIndivData['err'])
         outpath = '{}/{}_average_growthcurves.png'.format(outDir, c)
         title = '{} Growth Curves Using Average'.format(c)
         PMFigures.curvePlotter(plotIndivData['avg'], sortW, pmData.time,
-                               outpath, title, stddev)
-    outpath = '{}/all_median_growthcurves'.format(outDir)
-    title = 'Median Growth Curves'
-    PMFigures.curvePlotter(plotData['med'], sortW, pmData.time,
-                           outpath, title, None)
-    outpath = '{}/all_average_growthcurves'.format(outDir)
-    title = 'Average Growth Curves'
-    PMFigures.curvePlotter(plotData['avg'], sortW, pmData.time,
-                           outpath, title, None)
+                               outpath, title, plotIndivData['err'])
+    # Only plot all median and average curves when there is
+    # more than 1 sample
+    if pmData.numClones > 1:
+        outpath = '{}/all_median_growthcurves'.format(outDir)
+        title = 'Median Growth Curves'
+        PMFigures.curvePlotter(plotData['med'], sortW, pmData.time,
+                               outpath, title, None)
+        outpath = '{}/all_average_growthcurves'.format(outDir)
+        title = 'Average Growth Curves'
+        PMFigures.curvePlotter(plotData['avg'], sortW, pmData.time,
+                               outpath, title, None)
 
 util.printStatus('Printing complete.')
 util.printStatus('Analysis complete.')
