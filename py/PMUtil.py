@@ -20,5 +20,5 @@ def timeStamp():
 
 def printStatus(msg):
     '''Print status message'''
-    print('{} {}'.format(timeStamp(), msg), file=sys.stderr)
+    print('{}    {}'.format(timeStamp(), msg), file=sys.stderr)
     sys.stderr.flush()
