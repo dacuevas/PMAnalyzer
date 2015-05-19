@@ -9,8 +9,8 @@
 from __future__ import absolute_import, division, print_function
 import argparse
 import PMUtil as util
-import PMData2
-import GrowthCurve2
+import PMData
+import GrowthCurve
 import pylab as py
 import warnings
 import pandas as pd
@@ -45,9 +45,9 @@ def curveFit(group, args):
 
     # Perform logistic fitting
     if plateFlag:
-        gCurve = GrowthCurve2.GrowthCurve(group["od"])
+        gCurve = GrowthCurve.GrowthCurve(group["od"])
     else:
-        gCurve = GrowthCurve2.GrowthCurve(group)
+        gCurve = GrowthCurve.GrowthCurve(group)
 
     # Add logistic parameters to DataFrame
     time = group.index.get_level_values("time")
@@ -86,14 +86,14 @@ def getLogCurve(group, args):
     finalTime = float(group["finTime"])
     plateFlag = args[0]
     time = py.linspace(0.0, finalTime, 100)
-    logistic = GrowthCurve2.logistic(time,
+    logistic = GrowthCurve.logistic(time,
                                      group["y0"][0],
                                      group["asymptote"][0],
                                      group["maxgrowth"][0],
                                      group["lag"][0])
 
     # Recalculate growth level
-    gl = GrowthCurve2.calcGrowth(logistic, group["asymptote"][0])
+    gl = GrowthCurve.calcGrowth(logistic, group["asymptote"][0])
     group["growthlevel"] = gl
 
     # Create DataFrame object with logistic curve
@@ -144,7 +144,7 @@ warnings.filterwarnings('error')
 
 # Parse data file
 util.printStatus('Parsing input file...')
-pmData = PMData2.PMData(inputFile, plateFlag)
+pmData = PMData.PMData(inputFile, plateFlag)
 util.printStatus('Parsing complete.')
 if verbose:
     if not plateFlag:
