@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 07 May 2015
+# Updated on 20 May 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -29,7 +29,7 @@ def buildLogParams(data, plateFlag):
     # Build a new DataFrame with growth curve parameters
     newidx = pd.MultiIndex.from_product(newlvls, names=newnames)
     d = {"y0": 0.0, "maxgrowth": 0.0, "asymptote": 0.0,
-         "lag": 0.0, "growthlevel": 0.0,
+         "lag": 0.0, "growthlevel": 0.0, "growthclass": "",
          "err_mse": 0.0, "finTime": 0.0}
     if plateFlag:
         d["mainsource"] = "ms"
@@ -56,6 +56,7 @@ def curveFit(group, args):
     dataLogParams["asymptote"].loc[sample, rep, well] = gCurve.asymptote
     dataLogParams["lag"].loc[sample, rep, well] = gCurve.lag
     dataLogParams["growthlevel"].loc[sample, rep, well] = gCurve.growthLevel
+    dataLogParams["growthclass"].loc[sample, rep, well] = gCurve.growthClass
     dataLogParams["err_mse"].loc[sample, rep, well] = gCurve.mse
     dataLogParams["finTime"].loc[sample, rep, well] = time[-1]
     if plateFlag:
@@ -87,14 +88,15 @@ def getLogCurve(group, args):
     plateFlag = args[0]
     time = py.linspace(0.0, finalTime, 100)
     logistic = GrowthCurve.logistic(time,
-                                     group["y0"][0],
-                                     group["asymptote"][0],
-                                     group["maxgrowth"][0],
-                                     group["lag"][0])
+                                    group["y0"][0],
+                                    group["asymptote"][0],
+                                    group["maxgrowth"][0],
+                                    group["lag"][0])
 
     # Recalculate growth level
-    gl = GrowthCurve.calcGrowth(logistic, group["asymptote"][0])
-    group["growthlevel"] = gl
+    #gl = GrowthCurve.calcGrowth(logistic, group["asymptote"][0])
+    #group["growthlevel"] = gl
+    #group["growthclass"] = GrowthCurve.growthClass(gl)
 
     # Create DataFrame object with logistic curve
     d = {"od": logistic}
@@ -187,6 +189,11 @@ meanParams.drop(pd.Index(["err_mse"]), axis=1, inplace=True)
 meanLogCurves = meanParams.groupby(level=["sample", "well"])
 meanLogCurves = meanLogCurves.apply(getLogCurve, args=(plateFlag,))
 
+# Recalculate growth level and growth class
+#gl = GrowthCurve.calcGrowth(logistic, group["asymptote"][0])
+#group["growthlevel"] = gl
+#group["growthclass"] = GrowthCurve.growthClass(gl)
+
 # Calculate mean and median values for printing
 dataMean = pmData.getMeanCurves()
 dataMedian = pmData.getMedianCurves()
@@ -199,13 +206,14 @@ util.printStatus('Processing complete.')
 ###############################################################################
 
 util.printStatus('Printing output files...')
-order = []
+
+plateCol = []  # Will add the mainsource and compound columns if they exist
 if plateFlag:
-    order = ["mainsource", "compound"]
+    plateCol = ["mainsource", "compound"]
 
 # all_median_curves file: median curves for each sample
 curvesToPrint = dataMedian.reset_index().set_index(["sample", "well"])
-col = order + ["time", "od"]
+col = plateCol + ["time", "od"]
 curvesToPrint.to_csv(
     "{}/all_curves_median_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
@@ -213,34 +221,35 @@ curvesToPrint.to_csv(
 
 # all_average_curves file: average curves for each sample
 curvesToPrint = dataMean.reset_index().set_index(["sample", "well"])
-col = order + ["time", "od"]
+col = plateCol + ["time", "od"]
 curvesToPrint.to_csv(
     "{}/all_curves_mean_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
 
 # logistic_params_sample file: logistic curve parameters for each sample
-col = order + ["y0", "lag", "maxgrowth", "asymptote",
-               "growthlevel", "err_mse"]
+col = plateCol + ["y0", "lag", "maxgrowth", "asymptote",
+                  "growthlevel", "growthclass", "err_mse"]
 dataLogParams.to_csv(
     "{}/logistic_params_sample_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
 
 # logistic_curves_sample file: logistic curves for each sample
 curvesToPrint = dataLogistic.reset_index().set_index(["sample", "rep", "well"])
-col = order + ["time", "od"]
+col = plateCol + ["time", "od"]
 curvesToPrint.to_csv(
     "{}/logistic_curves_sample_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
 
 # logistic_params_mean file. logistic curve parameters (mean)
-col = order + ["y0", "lag", "maxgrowth", "asymptote", "growthlevel"]
+col = plateCol + ["y0", "lag", "maxgrowth", "asymptote",
+                  "growthlevel", "growthclass"]
 meanParams.to_csv("{}/logistic_params_mean_{}.txt".format(outDir, outSuffix),
                   sep="\t", header=True, index=True, float_format="%.3f",
                   columns=col)
 
 # logistic_curves_mean file. logistic curve (mean)
 curvesToPrint = meanLogCurves.reset_index().set_index(["sample", "well"])
-col = order + ["time", "od"]
+col = plateCol + ["time", "od"]
 curvesToPrint.to_csv(
     "{}/logistic_curves_mean_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
