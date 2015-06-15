@@ -3,8 +3,8 @@
 # Use with Phenotype MicroArray analysis pipeline
 #
 # Author: Daniel A Cuevas
-# Created on 21 Nov. 2013
-# Updated on 15 Apr. 2015
+# Created on 21 Nov 2013
+# Updated on 20 May 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -42,6 +42,7 @@ class GrowthCurve:
                                      self.maxGrowthRate,
                                      self.lag)
         self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
+        self.growthClass = growthClass(self.growthLevel)
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)
         self.mse = self.sse / len(self.time)
 
