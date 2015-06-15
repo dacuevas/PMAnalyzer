@@ -286,9 +286,9 @@ eval $cmd
 
 in="$outputdir/${out}"
 if [[ $plate ]]; then
-    cmd="$pythonexec ${pyscriptdir}/pmanalysis2.py $in $outputdir -o $outputname -p $filterflag $verboseFlag $debugFlag $imageFlag"
+    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname -p $filterflag $verboseFlag $debugFlag $imageFlag"
 else
-    cmd="$pythonexec ${pyscriptdir}/pmanalysis2.py $in $outputdir -o $outputname $filterflag $verboseFlag $debugFlag $imageFlag"
+    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $verboseFlag $debugFlag $imageFlag"
 fi
 getTime && echo "${currtime}    *****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
