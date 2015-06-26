@@ -252,7 +252,7 @@ for c, wellDict in finalDataReps.items():
         if plateFlag:
             (ms, gc) = pmData.wells[w]
             pn = pmData.plateName[c]
-            pInfo = '\t'.join(ms, gc, pn, w)
+            pInfo = '\t'.join((ms, gc, pn, w))
         else:
             pInfo = w
 
