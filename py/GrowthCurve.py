@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 20 May 2015
+# Updated on 03 Jul 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -42,6 +42,10 @@ class GrowthCurve:
                                      self.maxGrowthRate,
                                      self.lag)
         self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
+        self.glScaled = calcGrowth2(self.dataLogistic, self.asymptote)
+        self.expGrowth = calcExpGrowth(self.maxGrowthRate, self.asymptote)
+        self.auc = calcAUC(self.y0, self.lag, self.maxGrowthRate,
+                           self.asymptote, self.time)
         self.growthClass = growthClass(self.growthLevel)
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)
         self.mse = self.sse / len(self.time)
@@ -116,6 +120,39 @@ def calcGrowth(logistic, asym):
     return len(logistic) / py.sum((1 / (logistic + asym)))
 
 
+def calcGrowth2(logistic, asym):
+    """
+    Calculate growth level using an adjusted harmonic mean
+    using a logistic model and its asymptote
+    """
+    return (len(logistic) / (asym * py.sum((1 / (logistic + asym))))) - 1
+
+
+def calcExpGrowth(mgr, asym):
+    """Calculate exponential growth value 'r'"""
+    return 4 * mgr / asym
+
+
+def calcAUC(y0, lag, mgr, asym, time):
+    """
+    Calculate the area under the curve of the logistic function
+    using its integrated formula
+    [ A( [A-y0] log[ exp( [4m(l-t)/A]+2 )+1 ]) / 4m ] + At
+    """
+    timeS = time[0]
+    timeE = time[-1]
+    t1 = asym - y0
+    t2_s = py.log(py.exp((4 * mgr * (lag - timeS) / asym) + 2) + 1)
+    t2_e = py.log(py.exp((4 * mgr * (lag - timeE) / asym) + 2) + 1)
+    t3 = 4 * mgr
+    t4_s = asym * timeS
+    t4_e = asym * timeE
+
+    start = (asym * (t1 * t2_s) / t3) + t4_s
+    end = (asym * (t1 * t2_e) / t3) + t4_e
+    return end - start
+
+
 def growthClass(gLevel):
     """Determine growth class based on growth level"""
     if gLevel >= 0.75:
@@ -133,7 +170,7 @@ def growthClass(gLevel):
 def logistic(t, y0, a, mgr, l):
     """Logistic modeling"""
     startOD = y0
-    exponent = ((mgr / a) * (l - t)) + 2
+    exponent = ((4 * mgr / a) * (l - t)) + 2
     try:
         denom = 1 + py.exp(exponent)
         lg = startOD + ((a - startOD) / denom)

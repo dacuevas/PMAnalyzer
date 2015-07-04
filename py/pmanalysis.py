@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 20 May 2015
+# Updated on 03 Jul 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -29,7 +29,8 @@ def buildLogParams(data, plateFlag):
     # Build a new DataFrame with growth curve parameters
     newidx = pd.MultiIndex.from_product(newlvls, names=newnames)
     d = {"y0": 0.0, "maxgrowth": 0.0, "asymptote": 0.0,
-         "lag": 0.0, "growthlevel": 0.0, "growthclass": "",
+         "lag": 0.0, "growthlevel": 0.0, "glscaled": 0.0,
+         "r": 0.0, "auc": 0.0, "growthclass": "",
          "err_mse": 0.0, "finTime": 0.0}
     if plateFlag:
         d["mainsource"] = "ms"
@@ -56,6 +57,9 @@ def curveFit(group, args):
     dataLogParams["asymptote"].loc[sample, rep, well] = gCurve.asymptote
     dataLogParams["lag"].loc[sample, rep, well] = gCurve.lag
     dataLogParams["growthlevel"].loc[sample, rep, well] = gCurve.growthLevel
+    dataLogParams["glscaled"].loc[sample, rep, well] = gCurve.glScaled
+    dataLogParams["r"].loc[sample, rep, well] = gCurve.expGrowth
+    dataLogParams["auc"].loc[sample, rep, well] = gCurve.auc
     dataLogParams["growthclass"].loc[sample, rep, well] = gCurve.growthClass
     dataLogParams["err_mse"].loc[sample, rep, well] = gCurve.mse
     dataLogParams["finTime"].loc[sample, rep, well] = time[-1]
@@ -92,11 +96,6 @@ def getLogCurve(group, args):
                                     group["asymptote"][0],
                                     group["maxgrowth"][0],
                                     group["lag"][0])
-
-    # Recalculate growth level
-    #gl = GrowthCurve.calcGrowth(logistic, group["asymptote"][0])
-    #group["growthlevel"] = gl
-    #group["growthclass"] = GrowthCurve.growthClass(gl)
 
     # Create DataFrame object with logistic curve
     d = {"od": logistic}
@@ -188,11 +187,26 @@ if plateFlag:
 meanParams.drop(pd.Index(["err_mse"]), axis=1, inplace=True)
 meanLogCurves = meanParams.groupby(level=["sample", "well"])
 meanLogCurves = meanLogCurves.apply(getLogCurve, args=(plateFlag,))
+meanParams.loc[:, "growthclass"] = ""
 
-# Recalculate growth level and growth class
-#gl = GrowthCurve.calcGrowth(logistic, group["asymptote"][0])
-#group["growthlevel"] = gl
-#group["growthclass"] = GrowthCurve.growthClass(gl)
+# Calculate new metrics for mean parameters
+for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
+    s, w = name
+    A = meanParams.loc[s, w]["asymptote"]
+    mgr = meanParams.loc[s, w]["maxgrowth"]
+    y0 = meanParams.loc[s, w]["y0"]
+    lag = meanParams.loc[s, w]["lag"]
+    time = group.index.get_level_values("time")
+
+    gl = GrowthCurve.calcGrowth(group.values, A)
+    glScaled = GrowthCurve.calcGrowth2(group.values, A)
+    r = GrowthCurve.calcExpGrowth(mgr, A)
+    auc = GrowthCurve.calcAUC(y0, lag, mgr, A, time)
+    gClass = GrowthCurve.growthClass(gl)
+
+    cols = ("growthlevel", "glscaled", "r", "auc", "growthclass")
+    meanParams.loc[(s, w), cols] = (gl, glScaled, r, auc, gClass)
+
 
 # Calculate mean and median values for printing
 dataMean = pmData.getMeanCurves()
@@ -228,7 +242,8 @@ curvesToPrint.to_csv(
 
 # logistic_params_sample file: logistic curve parameters for each sample
 col = plateCol + ["y0", "lag", "maxgrowth", "asymptote",
-                  "growthlevel", "growthclass", "err_mse"]
+                  "growthlevel", "glscaled", "r", "auc",
+                  "growthclass", "err_mse"]
 dataLogParams.to_csv(
     "{}/logistic_params_sample_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
@@ -242,7 +257,7 @@ curvesToPrint.to_csv(
 
 # logistic_params_mean file. logistic curve parameters (mean)
 col = plateCol + ["y0", "lag", "maxgrowth", "asymptote",
-                  "growthlevel", "growthclass"]
+                  "growthlevel", "glscaled", "r", "auc", "growthclass"]
 meanParams.to_csv("{}/logistic_params_mean_{}.txt".format(outDir, outSuffix),
                   sep="\t", header=True, index=True, float_format="%.3f",
                   columns=col)
