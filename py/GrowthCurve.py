@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 03 Jul 2015
+# Updated on 07 Jul 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -46,6 +46,9 @@ class GrowthCurve:
         self.expGrowth = calcExpGrowth(self.maxGrowthRate, self.asymptote)
         self.auc = calcAUC(self.y0, self.lag, self.maxGrowthRate,
                            self.asymptote, self.time)
+
+        self.shiftAUC = calcShiftAUC(self.auc, self.y0, self.time[-1])
+
         self.growthClass = growthClass(self.growthLevel)
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)
         self.mse = self.sse / len(self.time)
@@ -151,6 +154,14 @@ def calcAUC(y0, lag, mgr, asym, time):
     start = (asym * (t1 * t2_s) / t3) + t4_s
     end = (asym * (t1 * t2_e) / t3) + t4_e
     return end - start
+
+
+def calcShiftAUC(auc, y0, tF):
+    """
+    Calculate the area under the curve minus
+    the area below the starting OD
+    """
+    return auc - (y0 * tF)
 
 
 def growthClass(gLevel):
