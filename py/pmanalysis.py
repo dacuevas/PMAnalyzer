@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 07 Jul 2015
+# Updated on 15 Jul 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -65,10 +65,16 @@ def curveFit(group, args):
     dataLogParams["err_mse"].loc[sample, rep, well] = gCurve.mse
     dataLogParams["finTime"].loc[sample, rep, well] = time[-1]
     if plateFlag:
-        m = group["mainsource"][0]
-        c = group["compound"][0]
-        dataLogParams["mainsource"].loc[sample, rep, well] = m
-        dataLogParams["compound"].loc[sample, rep, well] = c
+        try:
+            m = group["mainsource"][0]
+            c = group["compound"][0]
+            dataLogParams["mainsource"].loc[sample, rep, well] = m
+            dataLogParams["compound"].loc[sample, rep, well] = c
+        except TypeError:
+            print(group["mainsource"].values)
+            print(group)
+            import sys
+            sys.exit(1)
 
     # Create Series object of logistic values to return
     idxNames = ["sample", "rep", "well", "time"]
@@ -89,7 +95,12 @@ def curveFit(group, args):
 def getLogCurve(group, args):
     """Return logistic curve of each Pandas GroupBy group"""
     sample, well = group.name
-    finalTime = float(group["finTime"])
+    try:
+        finalTime = float(group["finTime"])
+    except:
+        import sys
+        print(group)
+        sys.exit(1)
     plateFlag = args[0]
     time = py.linspace(0.0, finalTime, 100)
     logistic = GrowthCurve.logistic(time,
@@ -202,7 +213,7 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     gl = GrowthCurve.calcGrowth(group.values, A)
     glScaled = GrowthCurve.calcGrowth2(group.values, A)
     r = GrowthCurve.calcExpGrowth(mgr, A)
-    auc = GrowthCurve.calcAUC(y0, lag, mgr, A, time)
+    auc = GrowthCurve.calcAUC(group.values, y0, lag, mgr, A, time)
     auc_shift = GrowthCurve.calcShiftAUC(auc, y0, time[-1])
     gClass = GrowthCurve.growthClass(gl)
 

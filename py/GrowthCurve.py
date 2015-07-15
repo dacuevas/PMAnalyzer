@@ -4,13 +4,14 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 07 Jul 2015
+# Updated on 15 Jul 2015
 
 
 from __future__ import absolute_import, division, print_function
 import PMUtil as util
 import pylab as py
 import scipy.optimize as optimize
+from numpy import trapz
 import sys
 
 
@@ -44,8 +45,8 @@ class GrowthCurve:
         self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
         self.glScaled = calcGrowth2(self.dataLogistic, self.asymptote)
         self.expGrowth = calcExpGrowth(self.maxGrowthRate, self.asymptote)
-        self.auc = calcAUC(self.y0, self.lag, self.maxGrowthRate,
-                           self.asymptote, self.time)
+        self.auc = calcAUC(self.rawcurve, self.y0, self.lag,
+                           self.maxGrowthRate, self.asymptote, self.time)
 
         self.shiftAUC = calcShiftAUC(self.auc, self.y0, self.time[-1])
 
@@ -136,12 +137,17 @@ def calcExpGrowth(mgr, asym):
     return 4 * mgr / asym
 
 
-def calcAUC(y0, lag, mgr, asym, time):
+def calcAUC(data, y0, lag, mgr, asym, time):
     """
     Calculate the area under the curve of the logistic function
     using its integrated formula
     [ A( [A-y0] log[ exp( [4m(l-t)/A]+2 )+1 ]) / 4m ] + At
     """
+
+    # First check that max growth rate is not zero
+    # If so, calculate using the data instead of the equation
+    if mgr == 0:
+        return calcAUCData(data, time)
     timeS = time[0]
     timeE = time[-1]
     t1 = asym - y0
@@ -154,6 +160,11 @@ def calcAUC(y0, lag, mgr, asym, time):
     start = (asym * (t1 * t2_s) / t3) + t4_s
     end = (asym * (t1 * t2_e) / t3) + t4_e
     return end - start
+
+
+def calcAUCData(data, time):
+    """Calculate the area under the curve based on data values"""
+    return trapz(data, time)
 
 
 def calcShiftAUC(auc, y0, tF):
