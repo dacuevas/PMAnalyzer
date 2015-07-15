@@ -147,19 +147,25 @@ def calcAUC(data, y0, lag, mgr, asym, time):
     # First check that max growth rate is not zero
     # If so, calculate using the data instead of the equation
     if mgr == 0:
-        return calcAUCData(data, time)
-    timeS = time[0]
-    timeE = time[-1]
-    t1 = asym - y0
-    t2_s = py.log(py.exp((4 * mgr * (lag - timeS) / asym) + 2) + 1)
-    t2_e = py.log(py.exp((4 * mgr * (lag - timeE) / asym) + 2) + 1)
-    t3 = 4 * mgr
-    t4_s = asym * timeS
-    t4_e = asym * timeE
+        auc = calcAUCData(data, time)
+    else:
+        timeS = time[0]
+        timeE = time[-1]
+        t1 = asym - y0
+        t2_s = py.log(py.exp((4 * mgr * (lag - timeS) / asym) + 2) + 1)
+        t2_e = py.log(py.exp((4 * mgr * (lag - timeE) / asym) + 2) + 1)
+        t3 = 4 * mgr
+        t4_s = asym * timeS
+        t4_e = asym * timeE
 
-    start = (asym * (t1 * t2_s) / t3) + t4_s
-    end = (asym * (t1 * t2_e) / t3) + t4_e
-    return end - start
+        start = (asym * (t1 * t2_s) / t3) + t4_s
+        end = (asym * (t1 * t2_e) / t3) + t4_e
+        auc = end - start
+
+    if py.absolute(auc) == float('Inf'):
+        x = py.diff(time)
+        auc = py.sum(x * data[1:])
+    return auc
 
 
 def calcAUCData(data, time):
