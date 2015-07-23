@@ -3,8 +3,8 @@
 # Automated bash script for running entire the phenotype microarray analysis
 #
 # Author: Daniel A Cuevas
-# Created on 22 Nov. 2013
-# Updated on 07 May 2015
+# Created on 22 Nov 2013
+# Updated on 23 Jul 2015
 
 usage() {
     echo "$2
@@ -29,7 +29,7 @@ Optional
    -n [number of plates]   : Number of plates [used with some parsers]
    -p [plate_filename]     : Plate filepath
    -s [sample_filename]    : Sample name and replicate file [used with some parsers]
-   -t [input_file_type]    : Format number of PM plate format. Range: [1, $1] [UNDER DEVELOPMENT]
+   -t [input_file_type]    : Format number of PM plate format. Range: [1, $1]
    -v                      : Verbose output
 
 NOTES
@@ -43,7 +43,9 @@ NOTES
 
 error() {
     echo "*****FATAL ERROR OCCURRED*****" >&1
+    echo "*****FATAL ERROR OCCURRED*****" >>$log
     echo $1 >&2
+    echo $1 >>$log
     exit 1
 }
 
@@ -73,7 +75,11 @@ checkOutputDir() {
     # Remove trailing slash
     outputdir=$(echo $1 | perl -ne 'chomp; s/\/$//; print;')
     # Check to see if directory needs to be created
-    [[ ! -d $1 ]] && getTime && echo "${currtime}    Output directory '$1' does not exist. Creating now." >&1 && mkdir $1
+    if [[ ! -d $1 ]]; then
+        getTime && echo "${currtime}    Output directory '$1' does not exist. Creating now." >&1
+        mkdir $1
+        getTime && echo "${currtime}    Output directory '$1' does not exist. Creating now." >>$log
+    fi
 }
 
 
@@ -93,12 +99,17 @@ getTime() {
     currtime=$(date "+[%F %H:%M:%S]")
 }
 
+timeStamp() {
+    timestamp=$(date "+%Y%m%dT%H%M%S")
+}
+
 ####################################################
 #ARGUMENT PARSING
 ####################################################
 
 scriptdir=$(cd $(dirname $0); pwd -P)
 pyscriptdir=$(cd $(dirname $0); pwd -P)/py
+parserscriptdir=$pyscriptdir/Parsers
 plscriptdir=$(cd $(dirname $0); pwd -P)/pl
 rscriptdir=$(cd $(dirname $0); pwd -P)/r
 scriptname=$(echo $0 | perl -ne '/\/?.*\/(.+)/; print $1;')
@@ -108,7 +119,7 @@ debugFlag=""
 imageFlag=""
 numplates=""
 frmtype=1
-frmmax=3
+frmmax=2
 samplefile=""
 encoding="UTF-16"
 pythonexec="/usr/local/bin/python3.4"
@@ -209,23 +220,31 @@ fi
 SAVEIFS=$IFS
 IFS=$(echo -en '\n\b')
 
-# Check if input file or directory exists
-checkInputDirectory $inputfiledir
+# Create log file
+timeStamp
+log="${outputdir}/log_${timestamp}.txt"
 
 # Remove leading slashes from output directory
 checkOutputDir $outputdir
+log="${outputdir}/log_${timestamp}.txt"
+
+# Check if input file or directory exists
+checkInputDirectory $inputfiledir
+
 
 # Check if script direectory exists
 checkScriptDir $pyscriptdir
 
 # Check for UTF-8 encodings
 getTime && echo "${currtime}    *****Checking character encodings*****" >&1
+getTime && echo "${currtime}    *****Checking character encodings*****" >>$log
 for f in ${inputfile[@]}; do
     enc=$(file --mime "$inputfiledir/$f" | egrep -ic "utf-8|us-ascii")
     if [[ $enc -eq 0 ]]; then
         f=$(echo "$f" | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
         cmd="iconv -f $encoding -t UTF-8 \"$inputfiledir/$f\" > tmp.txt && mv tmp.txt \"$inputfiledir/$f\""
         [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
+        [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
         eval $cmd
         [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
     fi
@@ -233,52 +252,55 @@ done
 
 # Convert input files line endings from DOS to UNIX
 getTime && echo "${currtime}    *****Checking line endings*****" >&1
+getTime && echo "${currtime}    *****Checking line endings*****" >>$log
 for f in ${inputfile[@]}; do
     f=$(echo "$f" | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
     cmd="perl -i -pe 's/\r\n?/\n/g' \"$inputfiledir/$f\""
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
     eval $cmd
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 done
 
 # Check which parser to use
-# UNDER DEVELOPMENT
-#case $frmtype in
-#    1)
-#        #p_script="pmParser.pl"
-#        p_script="mapsParser1.py"
-#        ;;
-#    2)
-#        p_script="well_vs_time_parser.pl"
-#        ;;
+case $frmtype in
+    1)
+        p_script="mapsParser1.py"
+        ;;
+    2)
+        p_script="info_vs_time.py"
+        ;;
 #    3)
 #        p_script="pmParser_v2.pl -n $numplates -s \"$samplefile\""
 #        ;;
-#    *)
-#        echo "Format type must be an integer within the range [1, $frmmax]." >&2
-#        usage $frmmax
-#        exit 2
-#esac
-p_script="mapsParser1.py"
+    *)
+        echo "Format type must be an integer within the range [1, $frmmax]." >&2
+        echo "Format type must be an integer within the range [1, $frmmax]." >>$log
+        usage $frmmax
+        exit 2
+esac
 
 ################################################
 #ANALYST PARSING
 ################################################
 
 getTime && echo "${currtime}    *****Parsing analyst files*****" >&1
+getTime && echo "${currtime}    *****Parsing analyst files*****" >>$log
 out="raw_curves_${outputname}.txt"
 
 # Check if plate was supplied
 if [[ $plate ]]; then
-    #cmd="${plscriptdir}/${p_script} -d $inputfiledir -p $plate > $outputdir/${out}"
-    cmd="$pythonexec ${pyscriptdir}/${p_script} $inputfiledir $outputdir -p $plate > $outputdir/${out}"
+    cmd="$pythonexec ${parserscriptdir}/${p_script} $inputfiledir -p $plate > $outputdir/${out}"
 else
-    #cmd="${plscriptdir}/${p_script} -d $inputfiledir > $outputdir/${out}"
-    cmd="$pythonexec ${pyscriptdir}/${p_script} $inputfiledir $outputdir > $outputdir/${out}"
+    cmd="$pythonexec ${parserscriptdir}/${p_script} $inputfiledir > $outputdir/${out}"
 fi
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-eval $cmd
+[[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+eval $cmd 2>>$log
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
+
+# If parser format is 2, plate information is included already
+plate=0
 
 ################################################
 #ANALYSIS
@@ -291,8 +313,10 @@ else
     cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $verboseFlag $debugFlag $imageFlag"
 fi
 getTime && echo "${currtime}    *****Starting modeling script*****" >&1
+getTime && echo "${currtime}    *****Starting modeling script*****" >>$log
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-eval $cmd
+[[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+eval $cmd 2>>$log
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
 
@@ -306,50 +330,63 @@ if [ -n "$imageFlag" ]; then
         pflag=""
     fi
     getTime && echo "${currtime}    *****Creating figures*****" >&1
+    getTime && echo "${currtime}    *****Creating figures*****" >>$log
 
     getTime && echo "${currtime}    Generating growth heatmap" >&1
+    getTime && echo "${currtime}    Generating growth heatmap" >>$log
     in="${outputdir}/logistic_params_mean_${outputname}.txt"
     out="${outputdir}/growthlevels"
     cmd="Rscript ${rscriptdir}/growthHeatmap.R -i $in -o $out -f png $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+    eval $cmd 2>>$log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
     getTime && echo "${currtime}    Generating growth curve plots for each sample" >&1
+    getTime && echo "${currtime}    Generating growth curve plots for each sample" >>$log
     in="${outputdir}/raw_curves_${outputname}.txt"
     out="${outputdir}/raw_curves"
     cmd="Rscript ${rscriptdir}/createGrowthPlots.R -i $in -o $out -s -c replicate -f png $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+    eval $cmd 2>>$log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
     getTime && echo "${currtime}    Generating average plot for each sample" >&1
+    getTime && echo "${currtime}    Generating average plot for each sample" >>$log
     in="${outputdir}/raw_curves_${outputname}.txt"
     out="${outputdir}/avg"
     cmd="Rscript ${rscriptdir}/createGrowthPlots.R -i $in -o $out -s -e -c all -f png -l average $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+    eval $cmd 2>>$log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
     getTime && echo "${currtime}    Generating logistic fitted plot for each sample" >&1
+    getTime && echo "${currtime}    Generating logistic fitted plot for each sample" >>$log
     in="${outputdir}/logistic_curves_sample_${outputname}.txt"
     out="${outputdir}/log"
     cmd="Rscript ${rscriptdir}/createGrowthPlots.R -i $in -o $out -s -c replicate -f png -l \"logistic fitted\" $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+    eval $cmd 2>>$log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
     getTime && echo "${currtime}    Generating median plot of all samples" >&1
+    getTime && echo "${currtime}    Generating median plot of all samples" >>$log
     in="${outputdir}/all_curves_median_${outputname}.txt"
     out="${outputdir}/all_median"
     cmd="Rscript ${rscriptdir}/createGrowthPlots.R -i $in -o $out -c sample -f png -l \"median\" $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >&1
-    eval $cmd
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd" >>$log
+    eval $cmd 2>>$log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 else
     getTime && echo "${currtime}    *****Figures flag not given*****" >&1
+    getTime && echo "${currtime}    *****Figures flag not given*****" >>$log
 fi
 
 # Restore internal field separator
 IFS=$SAVEIFS
 getTime && echo "${currtime}    *****Completed!*****" >&1
+getTime && echo "${currtime}    *****Completed!*****" >>$log
