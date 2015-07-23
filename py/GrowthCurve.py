@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 15 Jul 2015
+# Updated on 23 Jul 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -63,8 +63,8 @@ class GrowthCurve:
                                                 (0, None),
                                                 (0, None)))
         except RuntimeError as e:
-            print(e)
-            print(self.rawcurve)
+            util.printStatus(e)
+            util.printStatus(self.rawcurve)
             sys.exit(1)
 
         if not results.success:
