@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 23 Jul 2015
+# Updated on 29 Jul 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -45,10 +45,12 @@ class GrowthCurve:
         self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
         self.glScaled = calcGrowth2(self.dataLogistic, self.asymptote)
         self.expGrowth = calcExpGrowth(self.maxGrowthRate, self.asymptote)
-        self.auc = calcAUC(self.rawcurve, self.y0, self.lag,
-                           self.maxGrowthRate, self.asymptote, self.time)
 
-        self.shiftAUC = calcShiftAUC(self.auc, self.y0, self.time[-1])
+        self.auc_raw = calcAUCData(self.rawcurve, self.time)
+        self.auc_rshift = calcShiftAUC(self.auc_raw, self.y0, self.time[-1])
+        self.auc_log = calcAUC(self.rawcurve, self.y0, self.lag,
+                               self.maxGrowthRate, self.asymptote, self.time)
+        self.auc_lshift = calcShiftAUC(self.auc_log, self.y0, self.time[-1])
 
         self.growthClass = growthClass(self.growthLevel)
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)

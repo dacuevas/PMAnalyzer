@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 15 Jul 2015
+# Updated on 29 Jul 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -30,7 +30,8 @@ def buildLogParams(data, plateFlag):
     newidx = pd.MultiIndex.from_product(newlvls, names=newnames)
     d = {"y0": 0.0, "maxgrowth": 0.0, "asymptote": 0.0,
          "lag": 0.0, "growthlevel": 0.0, "glscaled": 0.0,
-         "r": 0.0, "auc": 0.0, "auc_shifted": 0.0,
+         "r": 0.0, "auc_raw": 0.0, "auc_rshift": 0.0,
+         "auc_log": 0.0, "auc_lshift": 0.0,
          "growthclass": "", "err_mse": 0.0, "finTime": 0.0}
     if plateFlag:
         d["mainsource"] = "ms"
@@ -59,8 +60,10 @@ def curveFit(group, args):
     dataLogParams["growthlevel"].loc[sample, rep, well] = gCurve.growthLevel
     dataLogParams["glscaled"].loc[sample, rep, well] = gCurve.glScaled
     dataLogParams["r"].loc[sample, rep, well] = gCurve.expGrowth
-    dataLogParams["auc"].loc[sample, rep, well] = gCurve.auc
-    dataLogParams["auc_shifted"].loc[sample, rep, well] = gCurve.shiftAUC
+    dataLogParams["auc_raw"].loc[sample, rep, well] = gCurve.auc_raw
+    dataLogParams["auc_rshift"].loc[sample, rep, well] = gCurve.auc_rshift
+    dataLogParams["auc_log"].loc[sample, rep, well] = gCurve.auc_log
+    dataLogParams["auc_lshift"].loc[sample, rep, well] = gCurve.auc_lshift
     dataLogParams["growthclass"].loc[sample, rep, well] = gCurve.growthClass
     dataLogParams["err_mse"].loc[sample, rep, well] = gCurve.mse
     dataLogParams["finTime"].loc[sample, rep, well] = time[-1]
@@ -201,6 +204,10 @@ meanLogCurves = meanParams.groupby(level=["sample", "well"])
 meanLogCurves = meanLogCurves.apply(getLogCurve, args=(plateFlag,))
 meanParams.loc[:, "growthclass"] = ""
 
+# Calculate mean and median values for printing
+dataMean = pmData.getMeanCurves()
+dataMedian = pmData.getMedianCurves()
+
 # Calculate new metrics for mean parameters
 for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     s, w = name
@@ -208,23 +215,27 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     mgr = meanParams.loc[s, w]["maxgrowth"]
     y0 = meanParams.loc[s, w]["y0"]
     lag = meanParams.loc[s, w]["lag"]
-    time = group.index.get_level_values("time")
+    time = group.index.get_level_values("time").unique()
+
+    # Get mean raw curve to calculate mean auc_raw and auc_rshift
+    rc = dataMean.loc[(s, w), "od"].values
+    auc_raw = GrowthCurve.calcAUCData(rc, time)
+    auc_rshift = GrowthCurve.calcShiftAUC(auc_raw, y0, time[-1])
 
     gl = GrowthCurve.calcGrowth(group.values, A)
     glScaled = GrowthCurve.calcGrowth2(group.values, A)
     r = GrowthCurve.calcExpGrowth(mgr, A)
-    auc = GrowthCurve.calcAUC(group.values, y0, lag, mgr, A, time)
-    auc_shift = GrowthCurve.calcShiftAUC(auc, y0, time[-1])
+    auc_log = GrowthCurve.calcAUC(group.values, y0, lag, mgr, A, time)
+    auc_lshift = GrowthCurve.calcShiftAUC(auc_log, y0, time[-1])
     gClass = GrowthCurve.growthClass(gl)
 
-    cols = ("growthlevel", "glscaled", "r", "auc",
-            "auc_shifted", "growthclass")
-    meanParams.loc[(s, w), cols] = (gl, glScaled, r, auc, auc_shift, gClass)
-
-
-# Calculate mean and median values for printing
-dataMean = pmData.getMeanCurves()
-dataMedian = pmData.getMedianCurves()
+    cols = ("growthlevel", "glscaled", "r",
+            "auc_raw", "auc_rshift", "auc_log", "auc_lshift",
+            "growthclass")
+    meanParams.loc[(s, w), cols] = (gl, glScaled, r,
+                                    auc_raw, auc_rshift,
+                                    auc_log, auc_lshift,
+                                    gClass)
 
 util.printStatus('Processing complete.')
 
@@ -256,8 +267,8 @@ curvesToPrint.to_csv(
 
 # logistic_params_sample file: logistic curve parameters for each sample
 col = plateCol + ["y0", "lag", "maxgrowth", "asymptote",
-                  "growthlevel", "glscaled", "r", "auc",
-                  "auc_shifted", "growthclass", "err_mse"]
+                  "growthlevel", "glscaled", "r", "auc_raw", "auc_rshift",
+                  "auc_log", "auc_lshift", "growthclass", "err_mse"]
 dataLogParams.to_csv(
     "{}/logistic_params_sample_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
@@ -271,8 +282,8 @@ curvesToPrint.to_csv(
 
 # logistic_params_mean file. logistic curve parameters (mean)
 col = plateCol + ["y0", "lag", "maxgrowth", "asymptote",
-                  "growthlevel", "glscaled", "r", "auc",
-                  "auc_shifted", "growthclass"]
+                  "growthlevel", "glscaled", "r", "auc_raw", "auc_rshift",
+                  "auc_log", "auc_lshift", "growthclass"]
 meanParams.to_csv("{}/logistic_params_mean_{}.txt".format(outDir, outSuffix),
                   sep="\t", header=True, index=True, float_format="%.3f",
                   columns=col)
