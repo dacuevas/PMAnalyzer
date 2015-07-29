@@ -3,8 +3,8 @@
 # Parsing script for GT Analyst multi-plate spectrophotometer
 #
 # Author: Daniel A Cuevas
-# Created on 13 Apr. 2015
-# Updated on 13 Apr. 2015
+# Created on 13 Apr 2015
+# Updated on 28 Jul 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -169,8 +169,6 @@ def printData(data, plate=None, pn=None):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("indir", help="Directory containing data files")
-parser.add_argument("outdir",
-                    help="Directory to store output files")
 parser.add_argument("-o", "--outsuffix",
                     help="Suffix appended to output files. Default is 'out'")
 parser.add_argument("-p", "--plate", help="Plate file for wells")
@@ -180,7 +178,6 @@ parser.add_argument("-v", "--verbose", action="store_true",
 args = parser.parse_args()
 inDir = args.indir
 outSuffix = args.outsuffix if args.outsuffix else "out"
-outDir = args.outdir
 verbose = args.verbose
 plateFile = args.plate
 
