@@ -84,9 +84,13 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
 ##               is included in the dataframe
 ##   title:      string to use as the title of the figure
 ##   color.by:   string specifying which column to color plots by
+##   x.lo:       minimum value for x-axis
+##   x.hi:       maximum value for x-axis
+##   y.lo:       minimum value for y-axis
+##   y.hi:       maximum value for y-axis
 ## RETURN:
 ##   pl:         ggplot object containing growth curve plots
-makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by) {
+makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.hi, y.lo, y.hi) {
     if (plot.err) {
         grpvrs <- c("time", "well")
         if(plateFlag) {
@@ -135,6 +139,29 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by) {
         guides(colour=guide_legend(override.aes=list(size=1)))+
     	ggtitle(title) + xlab("Time (hr)") + ylab("OD (600nm)") +
         scale_color_tableau(name="")
+
+    # Check for x and y limits
+    if (!is.null(x.lo) || !is.null(x.hi)) {
+        if (is.null(x.lo)) {
+            x.lo <- 0
+        }
+        if (is.null(x.hi)) {
+            x.hi <- max(plot.data$time)
+        }
+        pl <- pl + scale_x_continuous(limits=c(x.lo, x.hi))
+    }
+    if (!is.null(y.lo) || !is.null(y.hi)) {
+        if (is.null(y.lo)) {
+            y.lo <- 0
+        }
+        if (is.null(y.hi) && plot.err) {
+            y.hi <- max(plot.data$od + plot.data$se)
+        } else if (is.null(y.hi)) {
+            y.hi <- max(plot.data$od)
+        }
+        pl <- pl + scale_y_continuous(limits=c(y.lo, y.hi))
+    }
+
     return(pl)
 }
 
@@ -153,6 +180,10 @@ spec <- matrix(c(
         "dpi",      "d", 1, "integer",      "DPI for image (default:200) (max:600)",
         "width",    "w", 1, "integer",      "Width for image in cm (default:38) (max:50) (required if height is specified)",
         "height",   "t", 1, "integer",      "Height for image in cm (default:25.4) (max:50) (requred if width is specified)",
+        "x_lo",     "x", 1, "double",       "Lower limit for x-axis (default:None)",
+        "x_hi",     "a", 1, "double",       "Upper limit for x-axis (default:None)",
+        "y_lo",     "y", 1, "double",       "Lower limit for y-axis (default:None)",
+        "y_hi",     "b", 1, "double",       "Upper limit for y-axis (default:None)",
         "help",     "h", 0, "logical",      "This help message"
         ), ncol=5, byrow=T)
 
@@ -293,7 +324,8 @@ if (plot.sep) {
         } else {
             title <- paste(s, " - ", plot.title, sep="")
         }
-        pl <- makeFigure(plot.data, plot.err, plateFlag, title, opt$colorby)
+        pl <- makeFigure(plot.data, plot.err, plateFlag, title, opt$colorby,
+                         opt$x_lo, opt$x_hi, opt$y_lo, opt$y_hi)
         ggsave(paste(opt$outfile, "_", s, ".", opt$type, sep=""),
                plot=pl,
                width=opt$width,
@@ -302,7 +334,8 @@ if (plot.sep) {
                dpi=opt$dpi)
     }
 } else {
-    pl <- makeFigure(data, plot.err, plateFlag, plot.title, opt$colorby)
+    pl <- makeFigure(data, plot.err, plateFlag, plot.title, opt$colorby,
+                        opt$x_lo, opt$x_hi, opt$y_lo, opt$y_hi)
     ggsave(paste(opt$outfile, ".", opt$type, sep=""),
            plot=pl,
            width=opt$width,
