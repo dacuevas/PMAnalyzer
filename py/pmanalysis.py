@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 29 Jul 2015
+# Updated on 20 Aug 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -44,12 +44,13 @@ def curveFit(group, args):
     sample, rep, well = group.name
     dataLogParams = args[0]
     plateFlag = args[1]
+    growthFlag = args[2]
 
     # Perform logistic fitting
     if plateFlag:
-        gCurve = GrowthCurve.GrowthCurve(group["od"])
+        gCurve = GrowthCurve.GrowthCurve(group["od"], growthFlag)
     else:
-        gCurve = GrowthCurve.GrowthCurve(group)
+        gCurve = GrowthCurve.GrowthCurve(group, growthFlag)
 
     # Add logistic parameters to DataFrame
     time = group.index.get_level_values("time")
@@ -141,6 +142,8 @@ parser.add_argument('-p', '--plate', action='store_true',
                     help='Input wells are based on a plate')
 parser.add_argument('-i', '--images', action='store_true',
                     help='Generate images and graphs')
+parser.add_argument('-g', '--growth', action='store_true',
+                    help='Use newer growth level calculation')
 
 args = parser.parse_args()
 inputFile = args.infile
@@ -150,6 +153,7 @@ verbose = args.verbose
 debugOut = args.debug
 plateFlag = args.plate
 imagesFlag = args.images
+growthFlag = args.growth
 
 # Set warnings filter for catching RuntimeWarnings
 warnings.filterwarnings('error')
@@ -181,7 +185,9 @@ if plateFlag:
         level=["sample", "rep", "well"])
 else:
     dataLogistic = pmData.DF["od"].groupby(level=["sample", "rep", "well"])
-dataLogistic = dataLogistic.apply(curveFit, args=(dataLogParams, plateFlag))
+dataLogistic = dataLogistic.apply(curveFit, args=(dataLogParams,
+                                                  plateFlag,
+                                                  growthFlag))
 
 # Calculate average parameters for each sample then
 # create new logistic curve for each sample
@@ -222,7 +228,10 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     auc_raw = GrowthCurve.calcAUCData(rc, time)
     auc_rshift = GrowthCurve.calcShiftAUC(auc_raw, y0, time[-1])
 
-    gl = GrowthCurve.calcGrowth(group.values, A)
+    if growthFlag:
+        gl = GrowthCurve.calcNewGrowth(group.values, A, y0)
+    else:
+        gl = GrowthCurve.calcGrowth(group.values, A)
     glScaled = GrowthCurve.calcGrowth2(group.values, A)
     r = GrowthCurve.calcExpGrowth(mgr, A)
     auc_log = GrowthCurve.calcAUC(group.values, y0, lag, mgr, A, time)

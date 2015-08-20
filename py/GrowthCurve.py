@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 29 Jul 2015
+# Updated on 20 Aug 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -17,7 +17,7 @@ import sys
 
 class GrowthCurve:
     """Bacteria growth curve class"""
-    def __init__(self, data):
+    def __init__(self, data, newGrowth=False):
         # data format
         #   Pandas GroupBy group object
         #   Indices: sample rep well time
@@ -42,7 +42,12 @@ class GrowthCurve:
                                      self.asymptote,
                                      self.maxGrowthRate,
                                      self.lag)
-        self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
+        if newGrowth:
+            self.growthLevel = calcNewGrowth(self.dataLogistic,
+                                             self.asymptote,
+                                             self.y0)
+        else:
+            self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
         self.glScaled = calcGrowth2(self.dataLogistic, self.asymptote)
         self.expGrowth = calcExpGrowth(self.maxGrowthRate, self.asymptote)
 
@@ -124,6 +129,15 @@ def calcGrowth(logistic, asym):
     using a logistic model and its asymptote
     """
     return len(logistic) / py.sum((1 / (logistic + asym)))
+
+
+def calcNewGrowth(logistic, asym, y0):
+    """
+    Calculate growth level using an adjusted harmonic mean
+    using a logistic model, its asymptote, and its starting OD value
+    """
+    diff = asym - y0
+    return len(logistic) / py.sum((1 / (logistic + diff)))
 
 
 def calcGrowth2(logistic, asym):
