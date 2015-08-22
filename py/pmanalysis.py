@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 20 Aug 2015
+# Updated on 21 Aug 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -20,23 +20,21 @@ import pandas as pd
 # Utility methods
 ###############################################################################
 
-def buildLogParams(data, plateFlag):
+def buildLogParams(data):
     """Build DataFrame to hold logistic parameters"""
-    # Only use indices "sample", "rep", and "well"
-    newlvls = data.index.levels[0:3]
-    newnames = data.index.names[0:3]
-
-    # Build a new DataFrame with growth curve parameters
-    newidx = pd.MultiIndex.from_product(newlvls, names=newnames)
     d = {"y0": 0.0, "maxgrowth": 0.0, "asymptote": 0.0,
          "lag": 0.0, "growthlevel": 0.0, "glscaled": 0.0,
          "r": 0.0, "auc_raw": 0.0, "auc_rshift": 0.0,
          "auc_log": 0.0, "auc_lshift": 0.0,
-         "growthclass": "", "err_mse": 0.0, "finTime": 0.0}
+         "growthclass": "", "err_mse": 0.0}
     if plateFlag:
         d["mainsource"] = "ms"
         d["compound"] = "cp"
-    return pd.DataFrame(d, index=newidx)
+
+    # Remove time level
+    timeIdx = list(data.index.names).index("time")
+    return pd.DataFrame(d, index=data.index).reset_index(level=[timeIdx],
+                                                         drop=True)
 
 
 def curveFit(group, args):
@@ -67,18 +65,17 @@ def curveFit(group, args):
     dataLogParams["auc_lshift"].loc[sample, rep, well] = gCurve.auc_lshift
     dataLogParams["growthclass"].loc[sample, rep, well] = gCurve.growthClass
     dataLogParams["err_mse"].loc[sample, rep, well] = gCurve.mse
-    dataLogParams["finTime"].loc[sample, rep, well] = time[-1]
     if plateFlag:
         try:
             m = group["mainsource"][0]
             c = group["compound"][0]
             dataLogParams["mainsource"].loc[sample, rep, well] = m
             dataLogParams["compound"].loc[sample, rep, well] = c
-        except TypeError:
-            print(group["mainsource"].values)
-            print(group)
-            import sys
-            sys.exit(1)
+        except TypeError as e:
+            util.printStatus(e)
+            util.printStatus(group["mainsource"].values)
+            util.printStatus(group)
+            util.exitScript()
 
     # Create Series object of logistic values to return
     idxNames = ["sample", "rep", "well", "time"]
@@ -98,14 +95,8 @@ def curveFit(group, args):
 
 def getLogCurve(group, args):
     """Return logistic curve of each Pandas GroupBy group"""
-    sample, well = group.name
-    try:
-        finalTime = float(group["finTime"])
-    except:
-        import sys
-        print(group)
-        sys.exit(1)
     plateFlag = args[0]
+    finalTime = args[1][group.name]  # key = (sample, well)
     time = py.linspace(0.0, finalTime, 100)
     logistic = GrowthCurve.logistic(time,
                                     group["y0"][0],
@@ -179,7 +170,7 @@ if verbose:
 # time points and OD values for a single replicate on a single well
 # The the growth curve parameters are stored in the dataLogParams DataFrame
 util.printStatus('Processing growth curves and creating logistic models...')
-dataLogParams = buildLogParams(pmData.DF, plateFlag)
+dataLogParams = buildLogParams(pmData.DF)
 if plateFlag:
     dataLogistic = pmData.DF[["od", "mainsource", "compound"]].groupby(
         level=["sample", "rep", "well"])
@@ -188,6 +179,13 @@ else:
 dataLogistic = dataLogistic.apply(curveFit, args=(dataLogParams,
                                                   plateFlag,
                                                   growthFlag))
+
+# Get final time points
+finalTimePoints = {}
+for name, group in pmData.DF.groupby(level=["sample", "well"]):
+    # Add tuple name=(sample, well) to final time points
+    t = group.index.get_level_values("time")[-1]
+    finalTimePoints[name] = t
 
 # Calculate average parameters for each sample then
 # create new logistic curve for each sample
@@ -207,7 +205,8 @@ if plateFlag:
 
 meanParams.drop(pd.Index(["err_mse"]), axis=1, inplace=True)
 meanLogCurves = meanParams.groupby(level=["sample", "well"])
-meanLogCurves = meanLogCurves.apply(getLogCurve, args=(plateFlag,))
+meanLogCurves = meanLogCurves.apply(getLogCurve, args=(plateFlag,
+                                                       finalTimePoints))
 meanParams.loc[:, "growthclass"] = ""
 
 # Calculate mean and median values for printing
