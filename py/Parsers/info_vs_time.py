@@ -5,7 +5,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 23 Jul 2015
-# Updated on 23 Jul 2015
+# Updated on 20 Aug 2015
 #
 #
 ###############################################################
@@ -63,6 +63,11 @@ def readData(data, f):
     value_name = "od"
     dMelt = pd.melt(d, id_vars=id_vars, var_name=var_name,
                     value_name=value_name)
+    # Drop rows with NaN
+    # This happens when data is not recorded for a sample at a timepoint
+    # when another sample has a data
+    dMelt.dropna(inplace=True)
+
     dMelt.set_index(id_vars, inplace=True)
     if data is None:
         return dMelt
