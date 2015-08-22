@@ -41,7 +41,7 @@ Filenames must be in the format of `[sample]_[replicate]_[other].txt`. For examp
 ####Sample Images
 ![heatmap](https://github.com/dacuevas/PMAnalyzer/blob/master/sample/sample_results/growthlevels.png "Growth Level Heatmap")
 
-![growthcurves](https://github.com/dacuevas/PMAnalyzer/blob/master/sample/sample_results/avg_R.S.3.png "C. sedlakii Growth Curves")
+![growthcurves](https://github.com/dacuevas/PMAnalyzer/blob/develop/sample/sample_results/avg_R.S.3.png "C. sedlakii Growth Curves")
 
 ##*Usage*
 ```
