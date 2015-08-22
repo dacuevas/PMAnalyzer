@@ -1,0 +1,29 @@
+[2015-08-21 17:19:22]    *****Checking character encodings*****
+[2015-08-21 17:19:22]    *****Checking line endings*****
+[2015-08-21 17:19:22]    Executing perl -i -pe 's/\r\n?/\n/g' "data_csedlakii/R.S.3_ID773.txt"
+[2015-08-21 17:19:22]    Executing perl -i -pe 's/\r\n?/\n/g' "data_csedlakii/R.S.3_ID952.txt"
+[2015-08-21 17:19:22]    Executing perl -i -pe 's/\r\n?/\n/g' "data_csedlakii/R.S.3_ID953.txt"
+[2015-08-21 17:19:22]    *****Parsing analyst files*****
+[2015-08-21 17:19:22]    Executing /usr/local/bin/python3.4 /Users/dcuevas/Projects/PMAnalyzer/py/Parsers/mapsParser1.py data_csedlakii -p sample_plate.txt > sample_results2/raw_curves_myresults.txt
+[2015-08-21 17:19:23]    *****Starting modeling script*****
+[2015-08-21 17:19:23]    Executing /usr/local/bin/python3.4 /Users/dcuevas/Projects/PMAnalyzer/py/pmanalysis.py sample_results2/raw_curves_myresults.txt sample_results2 -o myresults -p   -v  -i
+[2015-08-21 17:19:24]    Parsing input file...
+[2015-08-21 17:19:24]    Parsing complete.
+[2015-08-21 17:19:24]    Found 1 samples and 96 wells.
+[2015-08-21 17:19:24]    Processing growth curves and creating logistic models...
+[2015-08-21 17:19:29]    Processing complete.
+[2015-08-21 17:19:29]    Printing output files...
+[2015-08-21 17:19:29]    Output files complete
+[2015-08-21 17:19:29]    Analysis complete.
+[2015-08-21 17:19:29]    *****Creating figures*****
+[2015-08-21 17:19:29]    Generating growth heatmap
+[2015-08-21 17:19:29]    Executing Rscript /Users/dcuevas/Projects/PMAnalyzer/r/growthHeatmap.R -i sample_results2/logistic_params_mean_myresults.txt -o sample_results2/growthlevels -f png -p
+[2015-08-21 17:19:31]    Generating growth curve plots for each sample
+[2015-08-21 17:19:31]    Executing Rscript /Users/dcuevas/Projects/PMAnalyzer/r/createGrowthPlots.R -i sample_results2/raw_curves_myresults.txt -o sample_results2/raw_curves -s -c replicate -f png -p
+[2015-08-21 17:19:37]    Generating average plot for each sample
+[2015-08-21 17:19:37]    Executing Rscript /Users/dcuevas/Projects/PMAnalyzer/r/createGrowthPlots.R -i sample_results2/raw_curves_myresults.txt -o sample_results2/avg -s -e -c all -f png -l average -p
+[2015-08-21 17:19:43]    Generating logistic fitted plot for each sample
+[2015-08-21 17:19:43]    Executing Rscript /Users/dcuevas/Projects/PMAnalyzer/r/createGrowthPlots.R -i sample_results2/logistic_curves_sample_myresults.txt -o sample_results2/log -s -c replicate -f png -l "logistic fitted" -p
+[2015-08-21 17:19:49]    Generating median plot of all samples
+[2015-08-21 17:19:49]    Executing Rscript /Users/dcuevas/Projects/PMAnalyzer/r/createGrowthPlots.R -i sample_results2/all_curves_median_myresults.txt -o sample_results2/all_median -c sample -f png -l "median" -p
+[2015-08-21 17:19:54]    *****Completed!*****
