@@ -39,7 +39,7 @@ Filenames must be in the format of `[sample]_[replicate]_[other].txt`. For examp
 - Growth level heat-map
 
 ####Sample Images
-![heatmap](https://github.com/dacuevas/PMAnalyzer/blob/master/sample/sample_results/growthlevels.png "Growth Level Heatmap")
+![heatmap](https://github.com/dacuevas/PMAnalyzer/blob/develop/sample/sample_results/growthlevels.png "Growth Level Heatmap")
 
 ![growthcurves](https://github.com/dacuevas/PMAnalyzer/blob/develop/sample/sample_results/avg_R.S.3.png "C. sedlakii Growth Curves")
 
