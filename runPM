@@ -35,11 +35,10 @@ Optional
    -g                      : Flag to use new growth level calculation
    -h, -?, --help          : This help message
    -m                      : Generate figures
-   -n [number of plates]   : Number of plates [used with some parsers]
    -p [plate_filename]     : Plate filepath
    --python [file path]    : Use specified Python executable [Default: /usr/local/bin/python3.4]
-   -s [sample_filename]    : Sample name and replicate file [used with some parsers]
-   -t [input_file_type]    : Format number of PM plate format. Range: [1, $1]
+   -s [sample_filename]    : Sample name and replicate file [used with -t 3]
+   -t [input_file_type]    : Parser number for input format. Range: [1, $1] [Default: 1]
    -v                      : Verbose output
 
 NOTES
@@ -125,9 +124,8 @@ growthflag=""
 verboseFlag=""
 debugFlag=""
 imageFlag=""
-numplates=""
 frmtype=1
-frmmax=2
+frmmax=3
 samplefile=""
 encoding="UTF-16"
 pythonexec="/usr/local/bin/python3.4"
@@ -172,11 +170,6 @@ while [[ $# != 0 ]]; do
         ;;
     -m)
         imageFlag="-i"
-        ;;
-    -n)
-        shift
-        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -n value" >&2 && usage && exit 2
-        numplates=$1
         ;;
     -o)
         shift
@@ -229,8 +222,8 @@ if [[ ! $inputfiledir ||
 fi
 
 if [[ $frmtype -eq 3 ]] &&
-    [[ ! $numplates || ! $samplefile ]]; then
-    usage $frmmax "Missing -n and/or -s options."
+    [[ ! $samplefile ]]; then
+    usage $frmmax "Missing -s options."
     exit 2
 fi
 
@@ -285,9 +278,9 @@ case $frmtype in
     2)
         p_script="info_vs_time.py"
         ;;
-#    3)
-#        p_script="pmParser_v2.pl -n $numplates -s \"$samplefile\""
-#        ;;
+    3)
+        p_script="mapsParser2.py \"$samplefile\""
+        ;;
     *)
         echo "Format type must be an integer within the range [1, $frmmax]."  >&2 | tee -a $log
         #echo "Format type must be an integer within the range [1, $frmmax]." >>$log
