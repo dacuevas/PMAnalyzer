@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 20 Aug 2015
+# Updated on 26 Aug 2015
 
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,6 @@ import PMUtil as util
 import pylab as py
 import scipy.optimize as optimize
 from numpy import trapz
-import sys
 
 
 class GrowthCurve:
@@ -72,7 +71,7 @@ class GrowthCurve:
         except RuntimeError as e:
             util.printStatus(e)
             util.printStatus(self.rawcurve)
-            sys.exit(1)
+            util.exitScript()
 
         if not results.success:
             util.printStatus("*" * 55)
@@ -186,7 +185,14 @@ def calcAUC(data, y0, lag, mgr, asym, time):
 
 def calcAUCData(data, time):
     """Calculate the area under the curve based on data values"""
-    return trapz(data, time)
+    ld = len(data)
+    lt = len(time)
+    if ld != lt:
+        raise ValueError("len(data) {} != len(time) {}".format(ld, lt))
+    try:
+        return trapz(data, time)
+    except Exception:
+        raise
 
 
 def calcShiftAUC(auc, y0, tF):

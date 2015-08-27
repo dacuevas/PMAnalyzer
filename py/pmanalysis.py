@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 21 Aug 2015
+# Updated on 26 Aug 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -45,10 +45,15 @@ def curveFit(group, args):
     growthFlag = args[2]
 
     # Perform logistic fitting
-    if plateFlag:
-        gCurve = GrowthCurve.GrowthCurve(group["od"], growthFlag)
-    else:
-        gCurve = GrowthCurve.GrowthCurve(group, growthFlag)
+    try:
+        if plateFlag:
+            gCurve = GrowthCurve.GrowthCurve(group["od"], growthFlag)
+        else:
+            gCurve = GrowthCurve.GrowthCurve(group, growthFlag)
+    except Exception as e:
+        util.printStatus("sample: {}, rep: {}, well: {}".format(*group.name))
+        util.printStatus(e)
+        util.exitScript()
 
     # Add logistic parameters to DataFrame
     time = group.index.get_level_values("time")
@@ -72,6 +77,9 @@ def curveFit(group, args):
             dataLogParams["mainsource"].loc[sample, rep, well] = m
             dataLogParams["compound"].loc[sample, rep, well] = c
         except TypeError as e:
+            util.printStatus("*" * 55)
+            util.printStatus("ERROR")
+            util.printStatus("*" * 55)
             util.printStatus(e)
             util.printStatus(group["mainsource"].values)
             util.printStatus(group)
@@ -227,13 +235,24 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     auc_raw = GrowthCurve.calcAUCData(rc, time)
     auc_rshift = GrowthCurve.calcShiftAUC(auc_raw, y0, time[-1])
 
+    # Calculate logistic based on mean values
+    log = GrowthCurve.logistic(time, y0, A, mgr, lag)
+
     if growthFlag:
-        gl = GrowthCurve.calcNewGrowth(group.values, A, y0)
+        gl = GrowthCurve.calcNewGrowth(log, A, y0)
     else:
-        gl = GrowthCurve.calcGrowth(group.values, A)
-    glScaled = GrowthCurve.calcGrowth2(group.values, A)
+        gl = GrowthCurve.calcGrowth(log, A)
+    glScaled = GrowthCurve.calcGrowth2(log, A)
     r = GrowthCurve.calcExpGrowth(mgr, A)
-    auc_log = GrowthCurve.calcAUC(group.values, y0, lag, mgr, A, time)
+    try:
+        auc_log = GrowthCurve.calcAUC(log, y0, lag, mgr, A, time)
+    except Exception as e:
+        util.printStatus("*" * 55)
+        util.printStatus("ERROR")
+        util.printStatus("*" * 55)
+        util.printStatus("sample: {}, well: {}".format(*name))
+        util.printStatus(e)
+        util.exitScript()
     auc_lshift = GrowthCurve.calcShiftAUC(auc_log, y0, time[-1])
     gClass = GrowthCurve.growthClass(gl)
 
