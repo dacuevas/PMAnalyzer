@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 26 Aug 2015
+# Updated on 27 Aug 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -32,9 +32,12 @@ def buildLogParams(data):
         d["compound"] = "cp"
 
     # Remove time level
-    timeIdx = list(data.index.names).index("time")
-    return pd.DataFrame(d, index=data.index).reset_index(level=[timeIdx],
-                                                         drop=True)
+    logP_DF = pd.DataFrame(d, index=data.index.droplevel("time"))
+    # Reset index to drop duplicated rows caused by time points
+    logP_DF.reset_index(inplace=True)
+    logP_DF.drop_duplicates(inplace=True)
+    logP_DF.set_index(["sample", "rep", "well"], inplace=True)
+    return logP_DF
 
 
 def curveFit(group, args):
