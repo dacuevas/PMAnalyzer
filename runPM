@@ -243,6 +243,9 @@ fi
 SAVEIFS=$IFS
 IFS=$(echo -en '\n\b')
 
+# Set locale
+LANG="en_US.UTF-8"
+
 # Create log file
 timeStamp
 log="${outputdir}/PMAnalyzer_out_${timestamp}.txt"
