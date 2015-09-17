@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 26 Aug 2015
+# Updated on 17 Sep 2015
 
 VERSION="1.3"
 
@@ -278,7 +278,7 @@ for f in ${inputfile[@]}; do
         eval $cmd  2>&1 | tee -a $log
         [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
     else
-        getTime && echo "${currtime}    OK!" >&1 | tee -a $log
+        getTime && echo "${currtime}    $f is OK!" >&1 | tee -a $log
     fi
 done
 
