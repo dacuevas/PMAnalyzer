@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 27 Aug 2015
+# Updated on 13 Oct 2015
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -76,15 +76,35 @@ def curveFit(group, args):
     if plateFlag:
         try:
             m = group["mainsource"][0]
+        except TypeError as e:
+            stars = "*" * 55
+            err = "\n" + stars + "\nERROR: trying to obtain 'mainsource' from "
+            err += " ".join((sample, rep, well)) + "\n" + stars
+            util.printStatus(err)
+            util.printStatus(e)
+            util.printStatus(group["mainsource"].values)
+            util.printStatus(group)
+            util.exitScript()
+        try:
             c = group["compound"][0]
+        except TypeError as e:
+            stars = "*" * 55
+            err = "\n" + stars + "\nERROR: trying to obtain 'compound' from "
+            err += " ".join((sample, rep, well)) + "\n" + stars
+            util.printStatus(err)
+            util.printStatus(e)
+            util.printStatus(group["compound"].values)
+            util.printStatus(group)
+            util.exitScript()
+        try:
             dataLogParams["mainsource"].loc[sample, rep, well] = m
             dataLogParams["compound"].loc[sample, rep, well] = c
         except TypeError as e:
-            util.printStatus("*" * 55)
-            util.printStatus("ERROR")
-            util.printStatus("*" * 55)
+            stars = "*" * 55
+            err = "\n" + stars + "\nERROR: trying to use loc() method on "
+            err += " ".join((sample, rep, well)) + "\n" + stars
+            util.printStatus(err)
             util.printStatus(e)
-            util.printStatus(group["mainsource"].values)
             util.printStatus(group)
             util.exitScript()
 
@@ -144,7 +164,8 @@ parser.add_argument('-p', '--plate', action='store_true',
                     help='Input wells are based on a plate')
 parser.add_argument('-i', '--images', action='store_true',
                     help='Generate images and graphs')
-parser.add_argument('-g', '--growth', action='store_true',
+parser.add_argument('-g', '--growth', type=int,
+                    choices=[1, 2], metavar="[1, 2]",
                     help='Use newer growth level calculation')
 
 args = parser.parse_args()
@@ -155,7 +176,7 @@ verbose = args.verbose
 debugOut = args.debug
 plateFlag = args.plate
 imagesFlag = args.images
-growthFlag = args.growth
+growthFlag = args.growth if args.growth else 0
 
 # Set warnings filter for catching RuntimeWarnings
 warnings.filterwarnings('error')
@@ -241,7 +262,9 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     # Calculate logistic based on mean values
     log = GrowthCurve.logistic(time, y0, A, mgr, lag)
 
-    if growthFlag:
+    if growthFlag == 2:
+        gl = GrowthCurve.calcNewGrowth2(log, A, y0)
+    elif growthFlag == 1:
         gl = GrowthCurve.calcNewGrowth(log, A, y0)
     else:
         gl = GrowthCurve.calcGrowth(log, A)
