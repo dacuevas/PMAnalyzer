@@ -40,7 +40,7 @@ Optional
    --debug                 : Print out debug messages
    -e [encoding]           : Check for file encoding of original data [Default: UTF-16]
    -f                      : Flag if filter should be applied to growth curves during PManalysis
-   -g                      : Flag to use new growth level calculation
+   -g [type]               : Flag to use new growth level calculation. Range: [1, 2]
    -h, -?, --help          : This help message
    -m                      : Generate figures
    -p [plate_filename]     : Plate filepath
@@ -172,7 +172,9 @@ while [[ $# != 0 ]]; do
         filterflag="-f"
         ;;
     -g)
-        growthflag="-g"
+        shift
+        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -g value" >&2 && usage $frmmax && exit 2
+        growthflag="-g $1"
         ;;
     -i)
         shift
