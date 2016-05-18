@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 07 May 2015
-# Updated on 07 May 2015
+# Updated on 10 Mar 2016
 
 
 # Import necessary packages
@@ -15,6 +15,7 @@ suppressMessages(require("reshape2"))
 suppressMessages(require("getopt"))
 suppressMessages(require("ggthemes"))
 suppressMessages(require("plyr"))
+suppressMessages(require("grid"))
 
 
 #################################################################
@@ -115,7 +116,11 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.
     } else {
         pl <- ggplot(plot.data, aes(x=time, y=od))
     }
-    pl <- pl + facet_wrap(~well, ncol=12)
+
+    # Create facet panels
+    pl <- pl + facet_wrap(~well + compound, ncol=12)
+
+    # Plot error bars
     if (plot.err) {
         pl <- pl + geom_ribbon(aes(ymin=od-se, ymax=od+se, linetype=NA),
                                  fill="#1F77B4", alpha=0.5) +
@@ -126,13 +131,17 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.
         pl <- pl + geom_line(size=0.8, alpha=0.5) +
             geom_point(size=1.5, alpha=0.5)
     }
+
+    # Apply theme aesthetics
     pl <- pl + theme(axis.text=element_text(colour="black", size=12),
                      axis.text.x=element_text(angle=90, hjust=1, vjust=0.5),
                      axis.title=element_text(face="bold", size=15),
                      panel.grid.major=element_blank(),
                      panel.border=element_rect(colour="black", fill=NA),
-                     strip.text=element_text(size=12),
-                     strip.background=element_blank(),
+                     panel.margin=unit(3, "mm"),
+                     strip.text=element_text(face="bold", size=10, vjust=0),
+                     strip.background=element_rect(colour="white",
+                                                   fill=NA, size=3),
                      legend.key=element_rect(fill=NA),
                      plot.title=element_text(face="bold")
         ) +
@@ -178,8 +187,8 @@ spec <- matrix(c(
         "type",     "f", 1, "character",    "Type of image file (png*, eps, or svg) (*default)",
         "title",    "l", 1, "character",    "Title for figure (appended to sample name if plotsep is specified) (default:'')",
         "dpi",      "d", 1, "integer",      "DPI for image (default:200) (max:600)",
-        "width",    "w", 1, "integer",      "Width for image in cm (default:38) (max:50) (required if height is specified)",
-        "height",   "t", 1, "integer",      "Height for image in cm (default:25.4) (max:50) (requred if width is specified)",
+        "width",    "w", 1, "integer",      "Width for image in cm (default:42) (max:60) (required if height is specified)",
+        "height",   "t", 1, "integer",      "Height for image in cm (default:29) (max:50) (requred if width is specified)",
         "x_lo",     "x", 1, "double",       "Lower limit for x-axis (default:None)",
         "x_hi",     "a", 1, "double",       "Upper limit for x-axis (default:None)",
         "y_lo",     "y", 1, "double",       "Lower limit for y-axis (default:None)",
@@ -231,12 +240,12 @@ if (is.null(opt$dpi)) {
     opt$dpi <- 600
 }
 if (is.null(opt$width)) {
-    opt$width <- 38  # In centimeters
-} else if (opt$width > 50) {
-    opt$width <- 50
+    opt$width <- 42  # In centimeters
+} else if (opt$width > 60) {
+    opt$width <- 60
 }
 if (is.null(opt$height)) {
-    opt$height <- 25.40 # In centimeters
+    opt$height <- 29 # In centimeters
 } else if (opt$height > 50) {
     opt$height <- 50
 }
@@ -306,6 +315,96 @@ data$well <- factor(data$well,
                              "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12",
                              "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12"))
 
+# Convert long compound names
+cmpd.newline <- data.frame(orig=c("L-Glutamic Acid",
+                                  "Potassium Sorbate",
+                                  "Negative Control",
+                                  "Alpha-D-Glucose",
+                                  "L-Aspartic Acid",
+                                  "D-Glucose-6-Phosphate",
+                                  "4 Hydroxy-Phenylacetate",
+                                  "D-Aspartic Acid",
+                                  "Alpha-D-Lactose",
+                                  "L-Cysteic Acid",
+                                  "2 Deoxy-D-Ribose",
+                                  "L-Phenylalanine",
+                                  "D-Glutamic Acid",
+                                  "L-Pyro-Glutamic Acid",
+                                  "Beta-Phenylethylamine",
+                                  "N-Acetyl-D-Glucosamine",
+                                  "D-Glucosamine",
+                                  "2-Deoxy-D-Ribose",
+                                  "L-Djenkolic Acid",
+                                  "Acetyl Cysteine",
+                                  "1-Butane-Sulfonic Acid",
+                                  "Taurocholic Acid",
+                                  "Potassium-Tetra-Thionate",
+                                  "Magnesium Sulfate",
+                                  "Diethyl-Dithiophosphate",
+                                  "Sulfanic Acid",
+                                  "DL-Alpha-Amino-N-Butyric Acid",
+                                  "Sodium Thiosulfate",
+                                  "DL-Ethionine",
+                                  "N-Acetyl-DL-Methionine",
+                                  "Methane Sulfonic Acid",
+                                  "Gamma-Amino-N-Butyric Acid",
+                                  "N-Acetyl-L-Cysteine",
+                                  "Adenosine-5-Monophoshate",
+                                  "Sodium Pyrophosphate",
+                                  "Sodium Thiophosphate",
+                                  "Potassium phosphate",
+                                  "DL-Alpha-Glycerophosphate",
+                                  "Creatinephosphate",
+                                  "Beta-Glycerophosphate"),
+                           newl=c("L-Glutamic\nAcid",
+                                  "Potassium\nSorbate",
+                                  "Negative\nControl",
+                                  "Alpha-D-\nGlucose",
+                                  "L-Aspartic\nAcid",
+                                  "D-Glucose-6-\nPhosphate",
+                                  "4 Hydroxy-\nPhenylacetate",
+                                  "D-Aspartic\nAcid",
+                                  "Alpha-D-\nLactose",
+                                  "L-Cysteic\nAcid",
+                                  "2 Deoxy-D-\nRibose",
+                                  "L-\nPhenylalanine",
+                                  "D-Glutamic\nAcid",
+                                  "L-Pyro-\nGlutamic Acid",
+                                  "Beta-Phenyl\nethylamine",
+                                  "N-Acetyl-D-\nGlucosamine",
+                                  "D-\nGlucosamine",
+                                  "2-Deoxy-\nD-Ribose",
+                                  "L-Djenkolic\nAcid",
+                                  "Acetyl\nCysteine",
+                                  "1-Butane-\nSulfonic Acid",
+                                  "Taurocholic\nAcid",
+                                  "Potassium-\nTetra-\nThionate",
+                                  "Magnesium\nSulfate",
+                                  "Diethyl-\nDithiophosphate",
+                                  "Sulfanic\nAcid",
+                                  "DL-Alpha-\nAmino-N-\nButyric Acid",
+                                  "Sodium\nThiosulfate",
+                                  "DL-\nEthionine",
+                                  "N-Acetyl-\nDL-\nMethionine",
+                                  "Methane\nSulfonic\nAcid",
+                                  "Gamma-\nAmino-N-\nButyric Acid",
+                                  "N-Acetyl-\nL-Cysteine",
+                                  "Adenosine-5-\nMonophoshate",
+                                  "Sodium\nPyrophosphate",
+                                  "Sodium\nThiophosphate",
+                                  "Potassium\nPhosphate",
+                                  "DL-Alpha-\nGlycerophosphate",
+                                  "Creatine\nPhosphate",
+                                  "Beta-\nGlycerophosphate"))
+
+for (i in seq(1, nrow(cmpd.newline))) {
+    oldc <- as.character(cmpd.newline$orig[i])
+    newc <- as.character(cmpd.newline$newl[i])
+    levels(data$compound) <- c(levels(data$compound), newc)
+    data$compound[data$compound == oldc] <- newc
+}
+tmp <- droplevels(data$compound)
+
 # Change the time value from character string to numeric values
 # This causes a problem when trying to plot
 data$time <- as.numeric(as.character(data$time))
@@ -314,7 +413,26 @@ if("rep" %in% colnames(data)) {
     data$rep <- as.factor(data$rep)
 }
 
+#############################################################################
+# REPLACED WITH HARD-CODED NEWLINES
+## Insert newlines for names that are too long
+#if (plateFlag) {
+#    cmpds <- as.vector(unique(data$compound))
+#    for (c in cmpds) {
+#        if (nchar(c) > 13) {
+#            c.arr <- laply(seq(1, nchar(c), 13), function(i) substr(c, i, i + 12))
+#            #c2 <- paste(substr(c, 1, 7), "...", sep="")
+#            c2 <- paste(c.arr, collapse="\n")
+#            levels(data$compound) <- c(levels(data$compound), c2)
+#            data$compound[data$compound == c] <- c2
+#        }
+#    }
+#    tmp <- droplevels(data$compound)
+#}
+#############################################################################
+
 # Create figure
+# plot.sep is true when creating a plot per sample
 if (plot.sep) {
     dataNames <- unique(data$sample)
     for (s in dataNames) {
