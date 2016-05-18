@@ -118,7 +118,11 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.
     }
 
     # Create facet panels
-    pl <- pl + facet_wrap(~well + compound, ncol=12)
+    if (plateFlag) {
+        pl <- pl + facet_wrap(~well + compound, ncol=12)
+    } else {
+        pl <- pl + facet_wrap(~well, ncol=12)
+    }
 
     # Plot error bars
     if (plot.err) {
