@@ -3,16 +3,22 @@ from __future__ import print_function
 import argparse
 import re
 import sys
+import os.path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("input", help="Input PMAnalyzer file")
-parser.add_argument("plate", help="Plate file")
+parser.add_argument("plate", help="Plate file name")
 parser.add_argument("-n", "--nocolumn", action="store_true",
                     help="Plate information columns do not exist")
 
 args = parser.parse_args()
 
 plateinfo = {}
+# First check if known file name is given or use full path
+if not os.path.isfile(args.plate):
+    print("Checking PMAnalyzer directory for plate...", file=sys.stderr)
+    d = os.path.expanduser("~") + "/Projects/PMAnalyzer/plates/"
+    args.plate = d + args.plate
 with open(args.plate, "r") as f:
     for l in f:
         w, ms, c, conc = l.strip().split("\t")
