@@ -1,0 +1,104 @@
+#!/bin/sh
+# extractPMData
+# Copy PM results based on a specific search criteria
+
+##########################################
+# Function definitions
+##########################################
+usage() {
+    echo "$1
+usage: extractPMData <source> <dest> <search>
+
+Required
+   source    : Source directory holding PM files
+   dest      : Destination directory to copy files
+   search    : Search term to use
+
+" >&2
+}
+
+
+error() {
+    echo "*****FATAL ERROR OCCURRED*****" >&2
+    echo $1 >&2
+    exit 1
+}
+
+
+##########################################
+# Argument check
+##########################################
+if [[ -z $1 ]]; then
+    usage "Missing arguments"
+    exit 1
+elif [[ -z $2 ]]; then
+    usage "Destination directory is missing"
+    exit 1
+elif [[ -z $3 ]]; then
+    usage "Search term is missing"
+    exit 1
+fi
+
+SRCD=$1
+DESD=$2
+STRM=$3
+
+# Set internal field separator for files with spaces
+SAVEIFS=$IFS
+IFS=
+
+echo "SOURCE: $SRCD" >&2
+echo "DESTINATION: $DESD" >&2
+echo "SEARCH TERM: $STRM" >&2
+
+##########################################
+# Copy text files
+##########################################
+head -1 ${SRCD}/all_curves_mean_*.txt > "${DESD}/all_curves_mean_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying all_curves_mean"
+grep -E "$STRM" "${SRCD}"all_curves_mean_*.txt >> "${DESD}/all_curves_mean_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying all_curves_mean"
+
+head -1 ${SRCD}/all_curves_median_*.txt > "${DESD}/all_curves_median_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying all_curves_median"
+grep -E "$STRM" ${SRCD}/all_curves_median_*.txt >> "${DESD}/all_curves_median_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying all_curves_median"
+
+head -1 ${SRCD}/logistic_curves_mean_*.txt > "${DESD}/logistic_curves_mean_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_curves_mean"
+grep -E "$STRM" ${SRCD}/logistic_curves_mean_*.txt >> "${DESD}/logistic_curves_mean_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_curves_mean"
+
+head -1 ${SRCD}/logistic_curves_sample_*.txt > "${DESD}/logistic_curves_sample_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_curves_sample"
+grep -E "$STRM" ${SRCD}/logistic_curves_sample_*.txt >> "${DESD}/logistic_curves_sample_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_curves_sample"
+
+head -1 ${SRCD}/logistic_params_mean_*.txt > "${DESD}/logistic_params_mean_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_params_mean"
+grep -E "$STRM" ${SRCD}/logistic_params_mean_*.txt >> "${DESD}/logistic_params_mean_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_params_mean"
+
+head -1 ${SRCD}/logistic_params_sample_*.txt > "${DESD}/logistic_params_sample_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_params_sample"
+grep -E "$STRM" ${SRCD}/logistic_params_sample_*.txt >> "${DESD}/logistic_params_sample_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying logistic_params_sample"
+
+head -1 ${SRCD}/raw_curves_*.txt > "${DESD}/raw_curves_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying raw_curves"
+grep -E "$STRM" ${SRCD}/raw_curves_*.txt >> "${DESD}/raw_curves_${STRM}.txt"
+[[ $? -ne 0 ]] && error "Fail copying raw_curves"
+
+##########################################
+# Copy image files
+##########################################
+cp ${SRCD}/*${STRM}.png ${DESD}/
+
+##########################################
+# Copy log file
+##########################################
+cp ${SRCD}/PMAnalyzer_out_* ${DESD}/
+
+echo "Complete!"
+IFS=$SAVEIFS
+exit 0
