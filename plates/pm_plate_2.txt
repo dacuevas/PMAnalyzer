@@ -29,7 +29,7 @@ D4	Sulfur	Blank	0.0
 E4	Sulfur	Glutathione	0.2
 F4	Sulfur	Sulfanic Acid	0.2
 G4	Phosphorus	Blank	0.0
-H4	Phosphorus	Adenosine-5-Monophoshate	0.3
+H4	Phosphorus	Adenosine-5-Monophosphate	0.3
 A5	Nitrogen	Positive Control	0.0
 B5	Nitrogen	D-Aspartic Acid	0.3
 C5	Nitrogen	Thymidine	0.3
