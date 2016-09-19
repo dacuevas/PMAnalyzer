@@ -290,7 +290,7 @@ done
 # Convert input files line endings from DOS to UNIX
 getTime && echo "${currtime}    *****Checking line endings*****"  >&1 | tee -a $log
 for f in ${inputfile[@]}; do
-    f=$(echo "$f" | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
+    #f=$(echo "$f" | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
     cmd="perl -i -pe 's/\r\n?/\n/g' \"$inputfiledir/$f\""
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
     eval $cmd  2>&1 | tee -a $log
