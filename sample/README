@@ -8,15 +8,15 @@ First, open a Unix, OSX, or Linux terminal and go to the sample/ directory.
 
 Here, the data_csedlakii/ directory is located. To run PMAnalyzer, run the command
 
-> ../runPM -i data_csedlakii -n results -o myoutput
+> ../runPM -i data_csedlakii -d results -o myoutput
 
 To provide the MAP information, run the command
 
-> ../runPM -i data_csedlakii -n results -o myoutput -p sample_plate.txt
+> ../runPM -i data_csedlakii -d results -o myoutput -p sample_plate.txt
 
 To generate figures and the growth heat-map
 
-> ../runPM -i data_csedlakii -n results -o myoutput -p sample_plate.txt -m
+> ../runPM -i data_csedlakii -d results -o myoutput -p sample_plate.txt -m
 
 Note: use the -v flag to produce a verbose output.
 

@@ -39,29 +39,49 @@ Filenames must be in the format of `[sample]_[replicate]_[other].txt`. For examp
 - Growth level heat-map
 
 ####Sample Images
-![heatmap](https://github.com/dacuevas/PMAnalyzer/blob/master/sample/sample_results/growthlevels.png "Growth Level Heatmap")
+![heatmap](https://github.com/dacuevas/PMAnalyzer/blob/develop/sample/sample_results/growthlevels.png "Growth Level Heatmap")
 
-![growthcurves](https://github.com/dacuevas/PMAnalyzer/blob/master/sample/sample_results/mean_growthcurves.png "C. sedlakii Growth Curves")
+![growthcurves](https://github.com/dacuevas/PMAnalyzer/blob/develop/sample/sample_results/avg_R.S.3.png "C. sedlakii Growth Curves")
 
 ##*Usage*
 ```
+        ___          _               _
+       / _ \/\/\    /_\  _ __   __ _| |_   _ _______ _ __
+      / /_)/    \  //_\\| '_ \ / _` | | | | |_  / _ \ '__|
+     / ___/ /\/\ \/  _  \ | | | (_| | | |_| |/ /  __/ |
+     \/   \/    \/\_/ \_/_| |_|\__,_|_|\__, /___\___|_|
+                                        |___/
+
+PMAnalyzer version 1.2
+
 usage: runPM -c config_filename [Options]
 OR
-usage: runPM -i PM_data_directory -n output_directory -o output_name [Options]
+usage: runPM -i PM_data_directory -d output_directory -o output_name [Options]
 
 Required
-   -c [config_filename]    : Configuration file listing all parameters (this takes precedence)
+   -c [config_filename]    : Configuration file listing all parameters (this
+takes precedence)
    OR
    -i [PM_data_directory]  : PM data directory path to files
-   -n [output_directory]   : Output directory (will create if non-existent)
+   -d [output_directory]   : Output directory (will create if non-existent)
    -o [output_name]        : Suffix appended to all output files
 
 Optional
    --debug                 : Print out debug messages
-   -f                      : Flag if filter should be applied to growth curves during PManalysis
+   -e [encoding]           : Check for file encoding of original data [Default:
+UTF-16]
+   -f                      : Flag if filter should be applied to growth curves
+during PManalysis
+   -g                      : Flag to use new growth level calculation
    -h, -?, --help          : This help message
    -m                      : Generate figures
+   -n [number of plates]   : Number of plates [used with some parsers]
    -p [plate_filename]     : Plate filepath
+   --python [file path]    : Use specified Python executable [Default:
+/usr/local/bin/python3.4]
+   -s [sample_filename]    : Sample name and replicate file [used with some
+parsers]
+   -t [input_file_type]    : Format number of PM plate format. Range: [1, 2]
    -v                      : Verbose output
 ```
 

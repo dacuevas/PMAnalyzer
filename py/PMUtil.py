@@ -2,8 +2,8 @@
 # Phenotype microarray utility functions
 #
 # Author: Daniel A Cuevas
-# Created on 27 Jan. 2015
-# Updated on 27 Jan. 2015
+# Created on 27 Jan 2015
+# Updated on 20 Aug 2015
 
 from __future__ import absolute_import, division, print_function
 import sys
@@ -20,5 +20,10 @@ def timeStamp():
 
 def printStatus(msg):
     '''Print status message'''
-    print('{} {}'.format(timeStamp(), msg), file=sys.stderr)
+    print('{}    {}'.format(timeStamp(), msg), file=sys.stderr)
     sys.stderr.flush()
+
+
+def exitScript(num=1):
+    '''Exit script'''
+    sys.exit(num)

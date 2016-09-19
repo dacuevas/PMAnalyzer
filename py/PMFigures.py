@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 29 Dec. 2014
-# Updated on 01 Apr. 2015
+# Updated on 10 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
 import sys
@@ -126,14 +126,15 @@ def curvePlotter(data, wells, time, filepath, title, ebars=None):
     wells -- sorted list of well ids
     time -- numpy array of time in hours
     filepath -- filepath to save figure as
-    ebars -- include error bars as numpy array(default: None)
+    ebars -- include error bars in same format as data (default: None)
     '''
     # Define colors and line types here
     colors = ['r', 'b', 'g', 'k']
     shapes = ['.--', '.--', '.--', '.--']
 
     # Any values greater than 2 or less than 0.05 will be None
-    newdata = maskOD(data)
+    #newdata = maskOD(data)
+    newdata = data
     # Find highest OD value for y-axis scale limit
     hi = findHighOD(newdata) + 0.15
 
@@ -145,7 +146,7 @@ def curvePlotter(data, wells, time, filepath, title, ebars=None):
     ### Begin iterating through data
     ###########################################################################
     ### First key of dictionary is sample name
-    for idx, c in enumerate(newdata):
+    for idx, c in enumerate(sorted(newdata)):
         # Determine color and shape of line based on current curve
         clr = colors[(idx % 4)]
         shp = shapes[(idx % 4)]
@@ -171,7 +172,7 @@ def curvePlotter(data, wells, time, filepath, title, ebars=None):
             # Add ebars to plot if they are supplied
             if ebars is not None:
                 axarr[row, col].errorbar(time, curve,
-                                         yerr=ebars,
+                                         yerr=ebars[c][w],
                                          linestyle='None',
                                          ecolor='#888888')
 

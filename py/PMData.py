@@ -3,197 +3,106 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 16 Jan. 2015
+# Updated on 22 Apr. 2015
 
 from __future__ import absolute_import, division, print_function
-import pylab as py
-import sys
+import pandas as pd
 
 
 class PMData:
-    '''Class for parsing phenotype microarray data'''
+    """Class for parsing phenotype microarray data"""
     def __init__(self, filepath, plateFlag):
-        self.filepath = filepath
-        self.numClones = 0
-        self.numConditions = 0
-        self.numFiltered = 0
         self.plateFlag = plateFlag
-        self.plateName = {}  # Hash of clone->plateName
         self.replicates = {}  # Hash of clone->[reps]
         self.clones = []  # Set of unique clone names
-        if plateFlag:
-            self.wells = {}  # Hash of well->(mainsource, condition)
-        else:
-            self.wells = set([]) # Set of wells
-        self.time = []  # Array of time values
+        self.wells = []
 
         # Primary data structure to access data
-        self.dataHash = {}  # clone->rep #->well|->[ODs]
-                            #                   |->filter
+        self.DF = pd.DataFrame()
 
-        self.__beginParse()
+        self.__loadData(filepath)
+        self.__init()
 
-    def __beginParse(self):
-        '''Initiate parsing on the given PM file'''
-        f = open(self.filepath, 'r')
-        # Begin iteration through file
-        for lnum, l in enumerate(f):
-            l = l.rstrip('\n')
-            ll = l.split('\t')
+    def __loadData(self, filepath):
+        """Load data into Pandas DataFrame"""
+        indices = ["sample", "rep", "well", "time"]
+        self.DF = pd.read_csv(filepath, delimiter="\t", index_col=indices)
+        self.DF = self.DF.sortlevel(level=[0, 1, 2, 3])
 
-            # Line 1: header
-            if lnum == 0:
-                self.__parseHeader(ll)
+    def __init(self):
+        """Initialize all class variables"""
+        self.__sortWells()
 
-            # Line 2+: growth curves
-            else:
-                self.__parseODCurve(ll)
-        f.close()
-
-        # Check each growth curve is the same length
-        self.__QACheck()
-
-        # Set number of growth conditions present
-        self.numConditions = len(self.wells)
-
-    def __parseHeader(self, ll):
-        '''Header line contains data columns and time values'''
-        if self.plateFlag:
-            self.time = py.array([float(x) for x in ll[5:]])
-        else:
-            self.time = py.array([float(x) for x in ll[2:]])
-
-    def __parseODCurve(self, ll):
-        '''Growth curve parsing method'''
-        # Extract curve info
-        if self.plateFlag:
-            (c, ms, gc, pn, w) = ll[0:5]
-            # Add well info
-            self.wells[w] = (ms, gc)
-            curve = py.array([float(x) for x in ll[5:]])
-        else:
-            (c, w) = ll[0:2]
-            curve = py.array([float(x) for x in ll[2:]])
-            self.wells.add(w)
-
-        # Extract clone name and replicate name
-        # If no replicate name exists, assign it "1"
-        parsedName = c.split('_')
-        try:
-            (cName, rep) = parsedName[0:2]
-        except ValueError as e:
-            cName = parsedName[0]
-            rep = "1"
-
-        if cName not in self.clones:
-            self.clones.append(cName)
-            self.numClones += 1
-            self.replicates[cName] = []
-
-        if rep not in self.replicates[cName]:
-            self.replicates[cName].append(rep)
-
-        # Record plate name
-        if self.plateFlag:
-            self.plateName[cName] = pn
-
-        # Add curve to primary data hash
-        # Initialize data hash when needed
-        try:
-            self.dataHash[cName]
-        except KeyError:
-            self.dataHash[cName] = {}
-        try:
-            self.dataHash[cName][rep]
-        except KeyError:
-            self.dataHash[cName][rep] = {}
-
-        self.dataHash[cName][rep][w] = {'od': curve, 'filter': False}
+    def __sortWells(self):
+        """Sort wells numerically rather than alphanumerically"""
+        #self.wells = [(x[0], int(x[1:]))
+        #              for x in self.DF.index.levels[2]]
+        #self.wells = sorted(self.wells, key=itemgetter(0, 1))
+        #self.wells = ["{}{}".format(x[0], x[1]) for x in self.wells]
+        self.wells = self.DF.index.get_level_values("well").unique()
 
     def __QACheck(self):
-        '''QA check to ensure stable data set'''
-        problems = []
-        numTime = len(self.time)
-        for clone, repDict in self.dataHash.items():
-            for rep, wellDict in repDict.items():
-                for w, odDict in wellDict.items():
-                    # Find number of values in growth curve
-                    numVals = len(odDict['od'])
-                    if numVals != numTime:
-                        if self.plateFlag:
-                            (ms, gc) = self.wells[w]
-                            problems.append([clone, rep, ms, gc, w,
-                                            'time:{}\tcurve:{}'.format(
-                                                numTime, numVals)])
+        """QA check to ensure stable data set"""
+        pass
 
-                        else:
-                            problems.append([clone, rep, w,
-                                            'time:{}\tcurve:{}'.format(
-                                                numTime, numVals)])
+    def getSampleNames(self):
+        return self.DF.index.get_level_values("sample").unique()
 
-        # Print out issues
-        for p in problems:
-            print('\t'.join([str(x) for x in p]), file=sys.stderr)
+    def getNumSamples(self):
+        return len(self.getSampleNames())
 
-    def getCloneReplicates(self, clone, w, applyFilter=False):
-        '''Retrieve all growth curves for a clone+well'''
-        # Check if any other replicates should be returned
-        # retArray is a 2xN multidimensional numpy array
-        retArray = py.array([])
-        first = True
-        for rep in self.replicates[clone]:
-            # Get replicate
-            filterMe = self.dataHash[clone][rep][w]['filter']
-            currCurve = self.dataHash[clone][rep][w]['od']
+    def getReplicates(self, sample):
+        return self.DF.loc[sample].index.get_level_values("rep")
 
-            # Check if filter is enabled and curve should be filtered
-            if applyFilter and filterMe:
-                continue
+    def getWells(self):
+        """
+        Return well information
+        With plate info: return a DataFrame
+        Without plate info: return an Index array
+        """
+        if self.plateFlag:
+            # Grab only the mainsource and compound columns
+            wells = self.DF[["mainsource", "compound"]]
 
-            # Create multidimensional array if first
-            elif first:
-                retArray = py.array([currCurve])
-                first = False
+            # Remove duplicate items by grouping by the well id and
+            wells = wells.groupby(level="well", sort=False).last()
+        else:
+            wells = self.wells
+        return wells
 
-            # Append to multidimensional array if not first
-            else:
-                retArray = py.concatenate((retArray,
-                                           py.array([currCurve])))
+    def getNumWells(self):
+        return len(self.getWells())
 
-        return retArray
+    def getODCurve(self, sample, well, rep):
+        """Retrieve a single OD curve"""
+        return self.DF.loc[(sample, rep, well, slice(None))]["od"]
 
-    def getODCurve(self, clone, w, rep):
-        '''Retrieve a single OD curve'''
-        return self.dataHash[clone][rep][w]['od']
+    def getMedianCurves(self):
+        """Return DataFrame median curves for each sample"""
+        df = self.DF.median(level=["sample", "well", "time"])
+        if self.plateFlag:
+            leftMerge = df.reset_index()
+            rightMerge = self.DF[["mainsource", "compound"]].reset_index(
+                level=[1, 3], drop=True).reset_index().drop_duplicates()
+            df = pd.merge(
+                leftMerge,
+                rightMerge,
+                on=["sample", "well"],
+                how="left"
+            ).set_index(["sample", "well"])
+        return df
 
-    def getFiltered(self):
-        '''Retrieve array of all growth curves labeled as filtered'''
-        # Create array of tuples for each replicate curve labeled as filtered
-        # Format: [(clone, main source, growth condition,
-        #           replicate #, [OD values]), (next...), ...]
-        ret = []
-
-        # Iterate through clones
-        for clone, repDict in self.dataHash.items():
-            # Iterate through replicates
-            for rep, wellDict in repDict.items():
-                # Iterate through wells
-                for w, odDict in wellDict.items():
-                    # Check if filter is set to True
-                    if odDict['filter']:
-                        ret.append((clone, rep, w, odDict['od']))
-
-        return ret
-
-    def setFilter(self, clone, rep, w, filter):
-        '''Set filter for specific curve'''
-        oldFilter = self.dataHash[clone][rep][w]['filter']
-        self.dataHash[clone][rep][w]['filter'] = filter
-
-        # If filter changed from False to True, increment number of filtered
-        if not oldFilter and filter:
-            self.numFiltered += 1
-
-        # If filter changed from True to False, decrement number of filtered
-        elif oldFilter and not filter:
-            self.numFiltered -= 1
+    def getMeanCurves(self):
+        """Return DataFrame of mean curves for each sample"""
+        df = self.DF.mean(level=["sample", "well", "time"])
+        if self.plateFlag:
+            leftMerge = df.reset_index()
+            rightMerge = self.DF[["mainsource", "compound"]].reset_index(
+                level=[1, 3], drop=True).reset_index().drop_duplicates()
+            df = pd.merge(
+                leftMerge,
+                rightMerge,
+                on=["sample", "well"],
+                how="left"
+            ).set_index(["sample", "well"])
+        return df
