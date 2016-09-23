@@ -341,27 +341,30 @@ fi
 #ANALYSIS
 ################################################
 
-in="$outputdir/${out}"
 if [[ $plate ]]; then
-    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname -p $filterflag $growthflag $verboseFlag $debugFlag $imageFlag"
+    pflag="-p"
 else
-    cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $filterflag $growthflag $verboseFlag $debugFlag $imageFlag"
+    pflag=""
 fi
+in="$outputdir/${out}"
+cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $pflag $filterflag $growthflag $verboseFlag $debugFlag $imageFlag"
 getTime && echo "${currtime}    *****Starting modeling script*****"  >&1 | tee -a $log
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
 eval $cmd  2>&1 | tee -a $log
 [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
+# Statistics
+in="${outputdir}/logistic_params_sample_${outputname}.txt"
+cmd="$pythonexec ${pyscriptdir}/pmanalyzer_statistics.py $in $outputdir -o $outputname $verboseFlag $pflag"
+getTime && echo "${currtime}    *****Starting statistics script*****"  >&1 | tee -a $log
+[[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
+eval $cmd  2>&1 | tee -a $log
+[[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
 
 ################################################
 #PLOTS
 ################################################
 if [ -n "$imageFlag" ]; then
-    if [[ $plate ]]; then
-        pflag="-p"
-    else
-        pflag=""
-    fi
     getTime && echo "${currtime}    *****Creating figures*****"  >&1 | tee -a $log
 
     getTime && echo "${currtime}    Generating growth heatmap"  >&1 | tee -a $log
