@@ -59,14 +59,68 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
 	return(datac)
 }
 
+makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
+    if (is.null(title)) {
+        title <- "All Samples"
+        ftitle <- "all_samples"
+    }
+    pl <- ggplot(melt.data, aes(x=x, y=val)) +
+        facet_wrap(~metric, ncol=4, scales="free") +
+        geom_boxplot() +
+        theme(axis.text=element_text(colour="black", size=12),
+              axis.text.x=element_blank(),
+              axis.ticks.x=element_blank(),
+              axis.title=element_text(face="bold", size=15),
+              panel.grid.minor=element_blank(),
+              panel.border=element_rect(colour="black", fill=NA),
+              panel.margin=unit(3, "mm"),
+              strip.text=element_text(face="bold", size=12, vjust=0),
+              strip.background=element_rect(colour="white",
+                                            fill=NA, size=3),
+              legend.key=element_rect(fill=NA),
+              plot.title=element_text(face="bold")) +
+        xlab("") + ylab("") + ggtitle(title)
+
+    ggsave(paste(opt$outpath, "/box_plots_", ftitle,".png", sep=""),
+           plot=pl,
+           width=20,
+           height=20,
+           units="cm",
+           dpi=200)
+
+    pl <- ggplot(melt.data, aes(x=val)) +
+        facet_wrap(~metric, ncol=4, scales="free") +
+        geom_density(adjust=0.25, fill="#c7c7c7") +
+        geom_rect(data=data.stats, aes(x=NULL, y=NULL, xmin=val-sd, xmax=val+sd,
+                                       ymin=-Inf, ymax=Inf), alpha=0.2, fill="#1F77B4") +
+        geom_vline(aes(xintercept=val), data.stats, colour="#1F77B4", size=1) +
+        theme(axis.text=element_text(colour="black", size=12),
+              axis.title=element_text(face="bold", size=15),
+              panel.grid.minor=element_blank(),
+              panel.border=element_rect(colour="black", fill=NA),
+              panel.margin=unit(3, "mm"),
+              strip.text=element_text(face="bold", size=12, vjust=0),
+              strip.background=element_rect(colour="white",
+                                            fill=NA, size=3),
+              legend.key=element_rect(fill=NA),
+              plot.title=element_text(face="bold")) +
+        xlab("") + ylab("") + ggtitle(title)
+
+    ggsave(paste(opt$outpath, "/density_plots_", ftitle ,".png", sep=""),
+           plot=pl,
+           width=35,
+           height=20,
+           units="cm",
+           dpi=200)
+}
+
 #################################################################
 # ARGUMENT PARSING
 #################################################################
 spec <- matrix(c(
         "infile",     "i", 1, "character",    "Input file path (required)",
-        "out_suffix", "o", 1, "character",    "Output file suffix (required)",
+        "outpath",    "o", 1, "character",    "Output file path (required)",
         "plate",      "p", 0, "logical",      "Set flag if plate information is given (default: False)",
-        "title",    "l", 1, "character",      "Title for figure (default:'')",
         "help",       "h", 0, "logical",      "This help message"
         ), ncol=5, byrow=T)
 
@@ -85,11 +139,18 @@ if (is.null(opt$infile)) {
     q(status=1)
 }
 
-# Check for output suffix
-if (is.null(opt$out_suffix)) {
-    cat("\nOutput suffix not specified. Use the '-o' option.\n\n")
+# Check for output filepath
+if (is.null(opt$outpath)) {
+    cat("\nOutput filepath not specified. Use the '-o' option.\n\n")
     cat(paste(getopt(spec, usage=T), "\n"))
     q(status=1)
+}
+
+# Check for output suffix
+if (is.null(opt$out_suffix)) {
+    out.suffix <- "out"
+} else {
+    out.suffix <- opt$out_suffix
 }
 
 # Check plate flag
@@ -97,13 +158,6 @@ if (is.null(opt$plate)) {
     plateFlag <- F
 } else {
     plateFlag <- opt$plate
-}
-
-# Check for title
-if (is.null(opt$title)) {
-    plot.title <- ""
-} else {
-    plot.title <- opt$title
 }
 
 #################################################################
@@ -121,51 +175,11 @@ data.stats <- summarySE(melt.data, measurevar="val", groupvars=c("metric"))
 
 melt.data$x <- 0
 
-pl <- ggplot(melt.data, aes(x=x, y=val)) +
-    facet_wrap(~metric, ncol=4, scales="free") +
-    geom_boxplot() +
-    theme(axis.text=element_text(colour="black", size=12),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank(),
-          axis.title=element_text(face="bold", size=15),
-          panel.grid.minor=element_blank(),
-          panel.border=element_rect(colour="black", fill=NA),
-          panel.margin=unit(3, "mm"),
-          strip.text=element_text(face="bold", size=12, vjust=0),
-          strip.background=element_rect(colour="white",
-                                        fill=NA, size=3),
-          legend.key=element_rect(fill=NA),
-          plot.title=element_text(face="bold")) +
-    xlab("") + ylab("") + ggtitle(plot.title)
+# Make plots of all data
+makePlots(melt.data)
 
-ggsave(paste("box_plots_", opt$out_suffix, ".png", sep=""),
-       plot=pl,
-       width=20,
-       height=20,
-       units="cm",
-       dpi=200)
-
-pl <- ggplot(melt.data, aes(x=val)) +
-    facet_wrap(~metric, ncol=4, scales="free") +
-    geom_density(adjust=0.25, fill="#c7c7c7") +
-    geom_rect(data=data.stats, aes(x=NULL, y=NULL, xmin=val-sd, xmax=val+sd,
-                                   ymin=-Inf, ymax=Inf), alpha=0.2, fill="#1F77B4") +
-    geom_vline(aes(xintercept=val), data.stats, colour="#1F77B4", size=1) +
-    theme(axis.text=element_text(colour="black", size=12),
-          axis.title=element_text(face="bold", size=15),
-          panel.grid.minor=element_blank(),
-          panel.border=element_rect(colour="black", fill=NA),
-          panel.margin=unit(3, "mm"),
-          strip.text=element_text(face="bold", size=12, vjust=0),
-          strip.background=element_rect(colour="white",
-                                        fill=NA, size=3),
-          legend.key=element_rect(fill=NA),
-          plot.title=element_text(face="bold")) +
-    xlab("") + ylab("") + ggtitle(plot.title)
-
-ggsave(paste("density_plots_", opt$out_suffix, ".png", sep=""),
-       plot=pl,
-       width=35,
-       height=20,
-       units="cm",
-       dpi=200)
+# Make plots for each sample
+for (s in unique(melt.data$sample)) {
+    subdata <- subset(melt.data, sample == s)
+    makePlots(subdata, s, s)
+}
