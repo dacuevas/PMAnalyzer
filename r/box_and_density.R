@@ -13,6 +13,7 @@ suppressMessages(require("ggplot2"))
 suppressMessages(require("ggthemes"))
 suppressMessages(require("reshape2"))
 suppressMessages(require("grid"))
+suppressMessages(require("plyr"))
 
 
 #################################################################
