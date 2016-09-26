@@ -6,7 +6,7 @@
 # Created on 22 Nov 2013
 # Updated on 17 Sep 2015
 
-VERSION="1.3"
+VERSION="1.3.1"
 
 printversion() {
     echo "
@@ -367,10 +367,9 @@ eval $cmd  2>&1 | tee -a $log
 if [ -n "$imageFlag" ]; then
     getTime && echo "${currtime}    *****Creating figures*****"  >&1 | tee -a $log
 
-    getTime && echo "${currtime}    Generating growth heatmap"  >&1 | tee -a $log
-    in="${outputdir}/logistic_params_mean_${outputname}.txt"
-    out="${outputdir}/growthlevels"
-    cmd="Rscript ${rscriptdir}/growthHeatmap.R -i $in -o $out -f png $pflag"
+    getTime && echo "${currtime}    Generating box plots and density plots"  >&1 | tee -a $log
+    in="${outputdir}/logistic_params_sample_${outputname}.txt"
+    cmd="Rscript ${rscriptdir}/box_and_density.R -i $in -o $outputdir $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
     eval $cmd  2>&1 | tee -a $log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
@@ -403,6 +402,14 @@ if [ -n "$imageFlag" ]; then
     in="${outputdir}/all_curves_median_${outputname}.txt"
     out="${outputdir}/all_median"
     cmd="Rscript ${rscriptdir}/createGrowthPlots.R -i $in -o $out -c sample -f png -l \"median\" $pflag"
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
+    eval $cmd  2>&1 | tee -a $log
+    [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
+
+    getTime && echo "${currtime}    Generating growth heatmap"  >&1 | tee -a $log
+    in="${outputdir}/logistic_params_mean_${outputname}.txt"
+    out="${outputdir}/growthlevels"
+    cmd="Rscript ${rscriptdir}/growthHeatmap.R -i $in -o $out -f png $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
     eval $cmd  2>&1 | tee -a $log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
