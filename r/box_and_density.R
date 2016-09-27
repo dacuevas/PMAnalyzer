@@ -72,7 +72,7 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
     pl <- ggplot(melt.data, aes(x=x, y=val)) +
         facet_wrap(~metric, ncol=4, scales="free") +
         geom_boxplot() +
-        theme(axis.text=element_text(colour="black", size=12),
+        theme(axis.text=element_text(colour="black", size=10),
               axis.text.x=element_blank(),
               axis.ticks.x=element_blank(),
               axis.title=element_text(face="bold", size=15),
@@ -84,6 +84,7 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
                                             fill=NA, size=3),
               legend.key=element_rect(fill=NA),
               plot.title=element_text(face="bold")) +
+        scale_y_continuous(labels=fmt_decimals(3)) +
         xlab("") + ylab("") + ggtitle(title)
 
     ggsave(paste(opt$outpath, "/box_plots_", ftitle,".png", sep=""),
@@ -100,7 +101,7 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
         geom_rect(data=data.stats, aes(x=NULL, y=NULL, xmin=val-sd, xmax=val+sd,
                                        ymin=-Inf, ymax=Inf), alpha=0.2, fill="#1F77B4") +
         geom_vline(aes(xintercept=val), data.stats, colour="#1F77B4", size=1) +
-        theme(axis.text=element_text(colour="black", size=12),
+        theme(axis.text=element_text(colour="black", size=10),
               axis.title=element_text(face="bold", size=15),
               panel.grid.minor=element_blank(),
               panel.border=element_rect(colour="black", fill=NA),
@@ -110,6 +111,7 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
                                             fill=NA, size=3),
               legend.key=element_rect(fill=NA),
               plot.title=element_text(face="bold")) +
+        scale_x_continuous(labels=fmt_decimals(3)) +
         xlab("") + ylab("") + ggtitle(title)
 
     ggsave(paste(opt$outpath, "/density_plots_", ftitle ,".png", sep=""),
@@ -118,6 +120,11 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
            height=20,
            units="cm",
            dpi=200)
+}
+
+# Taken from http://stackoverflow.com/questions/10035786/ggplot2-y-axis-label-decimal-precision
+fmt_decimals <- function(decimals=0) {
+    function(x) format(x, digits=decimals, nsmall=3)
 }
 
 #################################################################
