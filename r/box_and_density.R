@@ -65,6 +65,10 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
         title <- "All Samples"
         ftitle <- "all_samples"
     }
+    # Calculate statistics
+    data.stats <- summarySE(melt.data, measurevar="val", groupvars=c("metric"))
+
+    # Draw box plots
     pl <- ggplot(melt.data, aes(x=x, y=val)) +
         facet_wrap(~metric, ncol=4, scales="free") +
         geom_boxplot() +
@@ -89,6 +93,7 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
            units="cm",
            dpi=200)
 
+    # Draw density plots
     pl <- ggplot(melt.data, aes(x=val)) +
         facet_wrap(~metric, ncol=4, scales="free") +
         geom_density(adjust=0.25, fill="#c7c7c7") +
@@ -172,8 +177,6 @@ if (plateFlag) {
 }
 melt.data <- melt(subset(data, select=c(-growthclass)),
                   id.vars=idvars, variable.name=c("metric"), value.name="val")
-data.stats <- summarySE(melt.data, measurevar="val", groupvars=c("metric"))
-
 melt.data$x <- 0
 
 # Make plots of all data
