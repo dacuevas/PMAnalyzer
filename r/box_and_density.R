@@ -60,16 +60,16 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
 	return(datac)
 }
 
-makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
+makePlots <- function(data, title=NULL, ftitle=NULL) {
     if (is.null(title)) {
         title <- "All Samples"
         ftitle <- "all_samples"
     }
     # Calculate statistics
-    data.stats <- summarySE(melt.data, measurevar="val", groupvars=c("metric"))
+    data.stats <- summarySE(data, measurevar="val", groupvars=c("metric"))
 
     # Draw box plots
-    pl <- ggplot(melt.data, aes(x=x, y=val)) +
+    pl <- ggplot(data, aes(x=x, y=val)) +
         facet_wrap(~metric, ncol=4, scales="free") +
         geom_boxplot() +
         theme(axis.text=element_text(colour="black", size=10),
@@ -95,7 +95,7 @@ makePlots <- function(melt.data, title=NULL, ftitle=NULL) {
            dpi=200)
 
     # Draw density plots
-    pl <- ggplot(melt.data, aes(x=val)) +
+    pl <- ggplot(data, aes(x=val)) +
         facet_wrap(~metric, ncol=4, scales="free") +
         geom_density(adjust=0.25, fill="#c7c7c7") +
         geom_rect(data=data.stats, aes(x=NULL, y=NULL, xmin=val-sd, xmax=val+sd,
