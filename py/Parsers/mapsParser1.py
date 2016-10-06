@@ -71,7 +71,7 @@ def readData(data, f, t0):
     fname = os.path.splitext(fname)[0]
 
     # Extract sample name and replicate from file
-    m = re.match(r"^([A-z0-9-.]+)_([A-z0-9]+)", fname)
+    m = re.match(r"^([A-Za-z0-9-.]+)_([A-Za-z0-9]+)", fname)
     if m is None:
         errOut("Could not extract name and replicate from filename: "
                "{}".format(f))
