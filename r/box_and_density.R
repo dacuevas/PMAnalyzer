@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 26 Sep 2016
-# Updated on 26 Sep 2016
+# Updated on 06 Oct 2016
 
 # Import necessary packages
 # These may need to be installed first
@@ -177,6 +177,11 @@ if (is.null(opt$plate)) {
 # DATA PROCESSING
 #################################################################
 data <- read.delim(opt$infile)
+
+# Force sample and replicate to be factor values
+data$sample <- as.factor(data$sample)
+data$rep<- as.factor(data$rep)
+
 if (plateFlag) {
     idvars <- c("sample", "rep", "well", "mainsource", "compound")
 } else {

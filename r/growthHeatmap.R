@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 07 May 2015
-# Updated on 07 May 2015
+# Updated on 06 Oct 2016
 
 
 # Import necessary packages
@@ -178,6 +178,9 @@ if (is.null(opt$hicol)) {
 # check.names=F : header names will be taken as is. There usually is a problem
 #                 when numbers are part of the header
 data <- read.table(opt$infile, header=T, sep="\t", check.names=F)
+
+# Force sample names to be factor values
+data$sample <- as.factor(data$sample)
 
 # Create x-axis labels based on plate information
 if (plateFlag) {
