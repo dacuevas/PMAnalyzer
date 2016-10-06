@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 07 May 2015
-# Updated on 10 Mar 2016
+# Updated on 06 Oct 2016
 
 
 # Import necessary packages
@@ -418,6 +418,8 @@ data$time <- as.numeric(as.character(data$time))
 if("rep" %in% colnames(data)) {
     data$rep <- as.factor(data$rep)
 }
+# Force sample names to be factor values
+data$sample <- as.factor(data$sample)
 
 #############################################################################
 # REPLACED WITH HARD-CODED NEWLINES
