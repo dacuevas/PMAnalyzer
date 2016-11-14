@@ -119,7 +119,7 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.
 
     # Create facet panels
     if (plateFlag) {
-        pl <- pl + facet_wrap(~well + compound, ncol=12)
+        pl <- pl + facet_wrap(~well + compound, ncol=12, labeller=labeller(.multi_line=F))
     } else {
         pl <- pl + facet_wrap(~well, ncol=12)
     }
