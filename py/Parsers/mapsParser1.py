@@ -190,8 +190,12 @@ plateFile = args.plate
 filenames = getDataFiles(inDir)
 
 # Check that the plate file exists
+# If not, check if it exists in PMAnalyzer premade plates
 if plateFile and not os.path.isfile(plateFile):
-    errOut("Plate file not found: {}".format(plateFile))
+    d = os.path.expanduser("~") + "/Projects/PMAnalyzer/plates/"
+    plateFile = d + plateFile
+    if not os.path.isfile(plateFile):
+        errOut("Plate file not found: {}".format(plateFile))
 
 if plateFile:
     plate = readPlate(plateFile)
