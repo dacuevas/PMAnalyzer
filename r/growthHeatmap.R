@@ -70,7 +70,7 @@ spec <- matrix(c(
         "title",    "l", 1, "character",    "Title for figure (default:'')",
         "dpi",      "d", 1, "integer",      "DPI for image (default:200) (max:600)",
         "width",    "w", 1, "integer",      "Width for entire image in cm (default:45) (max:90) (required if height is specified)",
-        "height",   "t", 1, "integer",      "Height for each sample in cm (default:2.5) (max:10) (requred if width is specified)",
+        "height",   "t", 1, "integer",      "Height for each sample in cm (default:3) (max:10) (requred if width is specified)",
         "bocol",    "b", 1, "character",    "Border color (can supply hex or name) (default:'white')",
         "locol",    "m", 1, "character",    "Low growth level color (can supply hex or name) (default:'white')",
         "hicol",    "n", 1, "character",    "High growth level color (can supply hex or name) (default:'black')",
@@ -126,7 +126,7 @@ if (is.null(opt$width)) {
     opt$width <- 90
 }
 if (is.null(opt$height)) {
-    opt$height <- 2.5 # In centimeters
+    opt$height <- 3 # In centimeters
 } else if (opt$height > 10) {
     opt$height <- 10
 }
