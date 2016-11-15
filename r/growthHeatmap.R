@@ -1,10 +1,10 @@
 #!/usr/bin/Rscript
 # growthHeatmap.R
-# Growth curve plot generation for PMAnalyzer
+# Growth level heatmap for PMAnalyzer
 #
 # Author: Daniel A Cuevas
 # Created on 07 May 2015
-# Updated on 06 Oct 2016
+# Updated on 15 Nov 2016
 
 
 # Import necessary packages
