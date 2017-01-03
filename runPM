@@ -4,9 +4,9 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 24 Oct 2016
+# Updated on 03 Jan 2017
 
-VERSION="2.0"
+VERSION="2.1"
 
 printversion() {
     echo "
@@ -410,6 +410,14 @@ if [ -n "$imageFlag" ]; then
     in="${outputdir}/logistic_params_mean_${outputname}.txt"
     out="${outputdir}/growthlevels"
     cmd="Rscript ${rscriptdir}/growthHeatmap.R -i $in -o $out -f png $pflag"
+    [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
+    eval $cmd  2>&1 | tee -a $log
+    [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"
+
+    getTime && echo "${currtime}    Generating growth classification heatmap"  >&1 | tee -a $log
+    in="${outputdir}/logistic_params_mean_${outputname}.txt"
+    out="${outputdir}/growthclass"
+    cmd="Rscript ${rscriptdir}/growthClassHeatmap.R -i $in -o $out -f png $pflag"
     [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
     eval $cmd  2>&1 | tee -a $log
     [[ $? -ne 0 ]] && getTime && error "${currtime}    Fail on command: $cmd"

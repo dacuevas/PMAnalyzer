@@ -1,9 +1,9 @@
 #!/usr/bin/Rscript
-# growthHeatmap.R
-# Growth level heatmap for PMAnalyzer
+# growthClassHeatmap.R
+# Growth classification heatmap
 #
 # Author: Daniel A Cuevas
-# Created on 07 May 2015
+# Created on 15 Nov 2016
 # Updated on 15 Nov 2016
 
 
@@ -30,15 +30,8 @@ suppressMessages(require("getopt"))
 ## RETURN:
 ##   pl:         ggplot object containing growth level heatmap
 makeFigure <- function(data, title, border.color, low.color, hi.color, plateFlag) {
-    # Determine growth levels for legend limits
-    gl.max <- max(data$growthlevel)
-    gl.min <- min(data$growthlevel)
-    if (gl.min > 0.25) {
-            gl.min <- 0
-    }
-
     # Create figure
-    pl <- ggplot(data, aes(x=xlab, y=sample, fill=growthlevel)) +
+    pl <- ggplot(data, aes(x=xlab, y=sample, fill=binclass)) +
         geom_tile(colour=border.color) +
         theme(axis.text.y=element_text(colour="black", size=12),
               axis.text.x=element_text(colour="black", size=10,
@@ -50,10 +43,7 @@ makeFigure <- function(data, title, border.color, low.color, hi.color, plateFlag
               plot.title=element_text(face="bold")) +
         scale_x_discrete(expand=c(0, 0)) +
         scale_y_discrete(expand=c(0, 0)) +
-        scale_fill_gradient(name="", low=low.color, high=hi.color,
-                            breaks=c(0.25, 0.75),
-                            labels=c("No Growth", "Growth"),
-                            limits=c(gl.min, gl.max)) +
+        scale_fill_manual(name="", values=c("white","#1F77B4"), labels=c("No Growth", "Growth")) +
         ggtitle(title) + xlab("") + ylab("")
 
     return(pl)
@@ -71,7 +61,7 @@ spec <- matrix(c(
         "dpi",      "d", 1, "integer",      "DPI for image (default:200) (max:600)",
         "width",    "w", 1, "integer",      "Width for entire image in cm (default:45) (max:90) (required if height is specified)",
         "height",   "t", 1, "integer",      "Height for each sample in cm (default:3) (max:10) (requred if width is specified)",
-        "bocol",    "b", 1, "character",    "Border color (can supply hex or name) (default:'white')",
+        "bocol",    "b", 1, "character",    "Border color (can supply hex or name) (default:'black')",
         "locol",    "m", 1, "character",    "Low growth level color (can supply hex or name) (default:'white')",
         "hicol",    "n", 1, "character",    "High growth level color (can supply hex or name) (default:'black')",
         "help",     "h", 0, "logical",      "This help message"
@@ -147,7 +137,7 @@ if (is.null(opt$title)) {
 
 # Check for border color
 if (is.null(opt$bocol)) {
-    border.color <- "white"
+    border.color <- "black"
 } else {
     border.color <- opt$bocol
 }
@@ -188,9 +178,17 @@ if (plateFlag) {
 } else {
     data$xlab <- data$well
 }
-
-# Organize data by growth level
-data$xlab <- factor(reorder(data$xlab, data$growthlevel, mean))
+# Organize data by well numbers
+data$well <- factor(data$well,
+                    levels=c("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12",
+                             "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12",
+                             "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12",
+                             "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12",
+                             "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10", "E11", "E12",
+                             "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+                             "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12",
+                             "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12"))
+data$xlab <- factor(data$xlab, levels=data$xlab[order(unique(data$well))])
 
 # Determine number of samples for height purposes
 numS <- length(unique(data$sample))
@@ -201,6 +199,10 @@ if (plateFlag) {
 } else {
     opt$height <- numS * opt$height
 }
+
+# Create binary classification
+data$binclass <- factor("growth", levels=c("no growth", "growth"))
+data$binclass[grep("-", data$growthclass)] <- "no growth"
 
 pl <- makeFigure(data, plot.title, border.color, low.color, hi.color, plateFlag)
 ggsave(paste(opt$outfile, ".", opt$type, sep=""),
