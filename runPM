@@ -6,7 +6,7 @@
 # Created on 22 Nov 2013
 # Updated on 03 Jan 2017
 
-VERSION="2.2"
+VERSION="2.3"
 
 printversion() {
     echo "
