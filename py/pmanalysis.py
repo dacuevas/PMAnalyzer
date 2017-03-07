@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 13 Oct 2015
+# Updated on 07 Mar 2017
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -327,7 +327,33 @@ dataLogParams.to_csv(
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
 
 # logistic_curves_sample file: logistic curves for each sample
-curvesToPrint = dataLogistic.reset_index().set_index(["sample", "rep", "well"])
+# Build new logistic curve consisting of 100 data points
+# Old method:
+#curvesToPrint = dataLogistic.reset_index().set_index(["sample", "rep", "well"])
+numPoints = 100
+logcurvesdf = pd.DataFrame({"sample": [], "rep": [], "well": [],
+                            "mainsource": [], "compound": [],
+                            "time": [], "od": []})
+for name, group in dataLogParams.groupby(level=["sample", "rep", "well"]):
+    finalTime = finalTimePoints[name[0], name[2]]  # key = (sample, well)
+    time = py.linspace(0.0, finalTime, numPoints)
+    logistic = GrowthCurve.logistic(time,
+                                    group["y0"][0],
+                                    group["asymptote"][0],
+                                    group["maxgrowth"][0],
+                                    group["lag"][0])
+
+    tmp_dict = {"sample": name[0],
+                "rep": name[1],
+                "well": name[2],
+                "time": time,
+                "od": logistic}
+    if plateFlag:
+        tmp_dict["mainsource"] = group["mainsource"][0]
+        tmp_dict["compound"] = group["compound"][0]
+    logcurvesdf = logcurvesdf.append(pd.DataFrame(tmp_dict))
+
+curvesToPrint = logcurvesdf.set_index(["sample", "rep", "well"])
 col = plateCol + ["time", "od"]
 curvesToPrint.to_csv(
     "{}/logistic_curves_sample_{}.txt".format(outDir, outSuffix),
