@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 20 Jan 2017
+# Updated on 07 Mar 2017
 
 
 from __future__ import absolute_import, division, print_function
@@ -69,7 +69,7 @@ class GrowthCurve:
         try:
             results = optimize.minimize(self.__logisticSSE, y0, args=(t, raw),
                                         bounds=((0, None),
-                                                (0.01, None),
+                                                (0.01, y0[1] + 0.5),
                                                 (0, None),
                                                 (0, None)))
         except RuntimeError as e:
