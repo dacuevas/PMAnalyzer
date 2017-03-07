@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 15 Nov 2016
-# Updated on 15 Nov 2016
+# Updated on 03 Jan 2017
 
 
 # Import necessary packages
@@ -43,7 +43,7 @@ makeFigure <- function(data, title, border.color, low.color, hi.color, plateFlag
               plot.title=element_text(face="bold")) +
         scale_x_discrete(expand=c(0, 0)) +
         scale_y_discrete(expand=c(0, 0)) +
-        scale_fill_manual(name="", values=c("white","#1F77B4"), labels=c("No Growth", "Growth")) +
+        scale_fill_manual(name="", values=c("white","#1F77B4"), labels=c("No Growth", "Growth"), drop=F) +
         ggtitle(title) + xlab("") + ylab("")
 
     return(pl)

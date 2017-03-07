@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 13 Oct 2015
+# Updated on 20 Jan 2017
 
 
 from __future__ import absolute_import, division, print_function
@@ -69,7 +69,7 @@ class GrowthCurve:
         try:
             results = optimize.minimize(self.__logisticSSE, y0, args=(t, raw),
                                         bounds=((0, None),
-                                                (0.01, y0[1]),
+                                                (0.01, None),
                                                 (0, None),
                                                 (0, None)))
         except RuntimeError as e:
@@ -103,25 +103,25 @@ class GrowthCurve:
     def __calcMGR(self):
         """Obtain the initial guess of the max growth"""
         # Calculate max growth rate using a sliding window of 4 data points
-        stop = len(self.time) - 4
+        stop = len(self.time) - 3
         maxGR = 0
         t = 0
-        for idx in range(1, stop):
+        for idx in range(0, stop):
             # Growth rate calculation:
             # (log(i+3) - log(i)) / (time(i+3) - time(i))
 
             # Be sure to check for zeros
             ya = self.rawcurve[idx]
-            yb = self.rawcurve[idx + 3]
+            yb = self.rawcurve[idx + 2]
             if ya <= 0:
                 ya = 0.001
             if yb <= 0:
                 yb = 0.001
             gr = ((py.log(yb) - py.log(ya)) /
-                  (self.time[idx + 3] - self.time[idx]))
+                  (self.time[idx + 2] - self.time[idx]))
             if idx == 1 or gr > maxGR:
                 maxGR = gr
-                t = self.time[idx + 2]  # Midpoint time value
+                t = self.time[idx + 1]  # Midpoint time value
 
         return maxGR, t
 
