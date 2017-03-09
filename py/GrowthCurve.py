@@ -66,12 +66,21 @@ class GrowthCurve:
 
     def __calcParameters(self, y0, t, raw):
         """Perform curve-fitting optimization to obtain parameters"""
+        # Calculate upper bounds
+        # y0[0] = start OD
+        # y0[1] = A
+        # y0[2] = MGR
+        # y0[3] = lag (set at 0.01)
+        a_ub = y0[1] + (y0[0] / 2)  # A bounded by estimated A plus half
+        mgr_ub = y0[2] + (y0[2] * 0.10)  # MGR bounded by 110% estimated MGR
+        lag_ub = t[-1]  # Lag bounded by final time
         try:
             results = optimize.minimize(self.__logisticSSE, y0, args=(t, raw),
                                         bounds=((0, None),
-                                                (0.01, y0[1] + 0.5),
-                                                (0, None),
-                                                (0, None)))
+                                                (0.001, a_ub),
+                                                (0, mgr_ub),
+                                                (0, lag_ub)),
+                                        method="L-BFGS-B")
         except RuntimeError as e:
             util.printStatus(e)
             util.printStatus(self.rawcurve)
@@ -119,7 +128,7 @@ class GrowthCurve:
                 yb = 0.001
             gr = ((py.log(yb) - py.log(ya)) /
                   (self.time[idx + 2] - self.time[idx]))
-            if idx == 1 or gr > maxGR:
+            if idx == 0 or gr > maxGR:
                 maxGR = gr
                 t = self.time[idx + 1]  # Midpoint time value
 
