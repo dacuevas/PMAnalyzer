@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 07 Mar 2017
+# Updated on 03 Apr 2017
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -50,9 +50,11 @@ def curveFit(group, args):
     # Perform logistic fitting
     try:
         if plateFlag:
-            gCurve = GrowthCurve.GrowthCurve(group["od"], growthFlag)
+            gCurve = GrowthCurve.GrowthCurve(group["od"], sample, rep, well,
+                                             growthFlag)
         else:
-            gCurve = GrowthCurve.GrowthCurve(group, growthFlag)
+            gCurve = GrowthCurve.GrowthCurve(group, sample, rep, well,
+                                             growthFlag)
     except Exception as e:
         util.printStatus("sample: {}, rep: {}, well: {}".format(*group.name))
         util.printStatus(e)
@@ -252,7 +254,7 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     mgr = meanParams.loc[s, w]["maxgrowth"]
     y0 = meanParams.loc[s, w]["y0"]
     lag = meanParams.loc[s, w]["lag"]
-    time = group.index.get_level_values("time").unique()
+    time = group.index.get_level_values("time").unique().values
 
     # Get mean raw curve to calculate mean auc_raw and auc_rshift
     rc = dataMean.loc[(s, w), "od"].values
