@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 07 Mar 2017
+# Updated on 03 Apr 2017
 
 
 from __future__ import absolute_import, division, print_function
@@ -16,7 +16,7 @@ from numpy import trapz
 
 class GrowthCurve:
     """Bacteria growth curve class"""
-    def __init__(self, data, newGrowth=0):
+    def __init__(self, data, sample, rep, well, newGrowth=0):
         # data format
         #   Pandas GroupBy group object
         #   Indices: sample rep well time
@@ -33,7 +33,7 @@ class GrowthCurve:
         self.y0, self.asymptote, self.maxGrowthRate, self.lag = (
             self.__calcParameters(
                 (self.y0, self.asymptote, self.maxGrowthRate, 0.01),
-                self.time, self.rawcurve)
+                self.time, self.rawcurve, sample, rep, well)
         )
 
         self.dataLogistic = logistic(self.time,
@@ -64,7 +64,7 @@ class GrowthCurve:
         self.sse = sum((self.dataLogistic - self.rawcurve) ** 2)
         self.mse = self.sse / len(self.time)
 
-    def __calcParameters(self, y0, t, raw):
+    def __calcParameters(self, y0, t, raw, sample, rep, well):
         """Perform curve-fitting optimization to obtain parameters"""
         # Calculate upper bounds
         # y0[0] = start OD
@@ -91,6 +91,17 @@ class GrowthCurve:
             util.printStatus("CurveFit Unsuccessful")
             util.printStatus(results.message)
             util.printStatus("*" * 55)
+
+        # Check if max growth rate is reasonable compared to asymptote
+        # Curve should not be able to reach asymptote in less than 0.1 hrs
+        # max growth rate * 0.1 should not be > A
+        if results.x[2] * 0.1 > results.x[1]:
+            # If this is true, set max growth rate to A / 1hr
+            util.printStatus("{}\t{}\t{}".format(sample, rep, well))
+            util.printStatus("Max growth rate ({:.3f}) * 0.1hr > Asymptote "
+                             "({:.3f}). Setting to MGR to  A / 1hr".format(
+                             results.x[2], results.x[1]))
+            results.x[2] = results.x[1]
 
         return results.x
 
@@ -190,8 +201,14 @@ def calcAUC(data, y0, lag, mgr, asym, time):
         timeS = time[0]
         timeE = time[-1]
         t1 = asym - y0
+        #try:
         t2_s = py.log(py.exp((4 * mgr * (lag - timeS) / asym) + 2) + 1)
         t2_e = py.log(py.exp((4 * mgr * (lag - timeE) / asym) + 2) + 1)
+        #except RuntimeWarning as rw:
+            # Exponent is too large, setting to 10^3
+        #    newexp = 1000
+        #    t2_s = py.log(newexp + 1)
+        #    t2_e = py.log(newexp + 1)
         t3 = 4 * mgr
         t4_s = asym * timeS
         t4_e = asym * timeE
@@ -253,10 +270,22 @@ def logistic(t, y0, a, mgr, l):
         util.printStatus("   Exponent value for logistic "
                          "equation is {:.3f}".format(exponent[0]))
         util.printStatus("   This produces a large value in the denominator "
-                         "of the logistic equation")
-        util.printStatus("   Now setting logistic value to y0: "
-                         "{:.3f}".format(startOD))
+                         "of the logistic equation, probably due to a small "
+                         "asymptote value and large max growth rate")
+        util.printStatus("   Now setting denominator to value of 10^3")
+        util.printStatus("   Predicted parameters:")
+        util.printStatus("      y0: {:.3f}".format(y0))
+        util.printStatus("      Lag: {:.3f}".format(l))
+        util.printStatus("      MGR: {:.3f}".format(mgr))
+        util.printStatus("      A: {:.3f}".format(a))
         util.printStatus("*" * 55)
-        lg = startOD
+        newdenom = []
+        for e in exponent:
+            if e > 500:
+                newdenom.append(500)
+            else:
+                newdenom.append(e)
+        denom = py.array(newdenom)
+        lg = startOD + ((a - startOD) / denom)
 
     return lg

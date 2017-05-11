@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 26 Sep 2016
-# Updated on 06 Oct 2016
+# Updated on 14 Apr 2017
 
 # Import necessary packages
 # These may need to be installed first
@@ -78,7 +78,7 @@ makePlots <- function(data, title=NULL, ftitle=NULL) {
               axis.title=element_text(face="bold", size=15),
               panel.grid.minor=element_blank(),
               panel.border=element_rect(colour="black", fill=NA),
-              panel.margin=unit(3, "mm"),
+              panel.spacing=unit(3, "mm"),
               strip.text=element_text(face="bold", size=12, vjust=0),
               strip.background=element_rect(colour="white",
                                             fill=NA, size=3),
@@ -105,7 +105,7 @@ makePlots <- function(data, title=NULL, ftitle=NULL) {
               axis.title=element_text(face="bold", size=15),
               panel.grid.minor=element_blank(),
               panel.border=element_rect(colour="black", fill=NA),
-              panel.margin=unit(3, "mm"),
+              panel.spacing=unit(3, "mm"),
               strip.text=element_text(face="bold", size=12, vjust=0),
               strip.background=element_rect(colour="white",
                                             fill=NA, size=3),
