@@ -280,11 +280,11 @@ def logistic(t, y0, a, mgr, l):
         util.printStatus("      A: {:.3f}".format(a))
         util.printStatus("*" * 55)
         newdenom = []
-        for d in denom:
-            if d > 500:
+        for e in exponent:
+            if e > 500:
                 newdenom.append(500)
             else:
-                newdenom.append(d)
+                newdenom.append(e)
         denom = py.array(newdenom)
         lg = startOD + ((a - startOD) / denom)
 
