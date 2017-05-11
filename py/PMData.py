@@ -2,8 +2,8 @@
 # Phenotype microarray module for parsing optical density data
 #
 # Author: Daniel A Cuevas
-# Created on 12 Dec. 2013
-# Updated on 14 Apr. 2017
+# Created on 12 Dec 2013
+# Updated on 11 May 2017
 
 from __future__ import absolute_import, division, print_function
 import pandas as pd
@@ -28,7 +28,7 @@ class PMData:
         indices = ["sample", "rep", "well", "time"]
         self.DF = pd.read_csv(filepath, delimiter="\t", index_col=indices,
                               dtype={"sample": str, "rep": str})
-        self.DF = self.DF.sortlevel(level=[0, 1, 2, 3])
+        self.DF = self.DF.sort_index(level=[0, 1, 2, 3])
 
     def __init(self):
         """Initialize all class variables"""
