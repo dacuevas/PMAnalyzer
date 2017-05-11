@@ -217,13 +217,23 @@ def printData(data, plate=None, pn=None):
         8) OD reading
     *Only printed when given a plate file
     """
+    # Temporary fix for #ERR in OD
+    lastOD = {s: {} for s in data.keys()}
+
     for s in data:
         # s = sample name
         for r in data[s]:
+            if r not in lastOD[s]:
+                lastOD[s][r] = {}
             # r = replicate
             for w in sorted(data[s][r], key=itemgetter(0, 1)):
+                if w not in lastOD[s][r]:
+                    lastOD[s][r][w] = "0.0"
                 # w = well tuple: sorted on row then column
                 for t, od in sorted(data[s][r][w].items()):
+                    if od == "#ERR":
+                        od = lastOD[s][r][w]
+                    lastOD[s][r][w] = od
                     # t = time
                     wId = "".join((w[0], str(w[1])))
                     if plate:
