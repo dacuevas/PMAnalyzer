@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 07 May 2015
-# Updated on 06 Oct 2016
+# Updated on 14 Apr 2017
 
 
 # Import necessary packages
@@ -142,7 +142,7 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.
                      axis.title=element_text(face="bold", size=15),
                      panel.grid.major=element_blank(),
                      panel.border=element_rect(colour="black", fill=NA),
-                     panel.margin=unit(3, "mm"),
+                     panel.spacing=unit(3, "mm"),
                      strip.text=element_text(face="bold", size=10, vjust=0),
                      strip.background=element_rect(colour="white",
                                                    fill=NA, size=3),
