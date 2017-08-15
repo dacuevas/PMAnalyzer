@@ -1,10 +1,10 @@
-#!/usr/loca/bin/python3
+#!/usr/local/bin/python3
 # mapsParser1.py
 # Parsing script for GT Analyst multi-plate spectrophotometer
 #
 # Author: Daniel A Cuevas
 # Created on 13 Apr 2015
-# Updated on 28 Jul 2015
+# Updated on 14 Aug 2017
 
 from __future__ import absolute_import, division, print_function
 import argparse
