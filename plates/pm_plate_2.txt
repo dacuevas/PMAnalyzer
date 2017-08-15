@@ -30,7 +30,7 @@ E4	Sulfur	Glutathione	0.2
 F4	Sulfur	Sulfanic Acid	0.2
 G4	Phosphorus	Blank	0.0
 H4	Phosphorus	Adenosine-5-Monophosphate	0.3
-A5	Nitrogen	Positive Control	0.0
+A5	Nitrogen	Ammonium Chloride	0.0
 B5	Nitrogen	D-Aspartic Acid	0.3
 C5	Nitrogen	Thymidine	0.3
 D5	Sulfur	Blank	0.0
@@ -56,7 +56,7 @@ G7	Phosphorus	Blank	0.0
 H7	Phosphorus	Potassium phosphate	0.3
 A8	Nitrogen	L-Serine	0.3
 B8	Nitrogen	D-Serine	0.3
-C8	Nitrogen	Blank 15	0.0
+C8	Nitrogen	Blank	0.0
 D8	Sulfur	Blank	0.0
 E8	Sulfur	1-Butane-Sulfonic Acid	0.3
 F8	Sulfur	N-Acetyl-DL-Methionine	0.3
