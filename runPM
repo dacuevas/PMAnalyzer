@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 08 Jun 2017
+# Updated on 14 Aug 2017
 
 VERSION="2.3"
 
@@ -133,7 +133,7 @@ verboseFlag=""
 debugFlag=""
 imageFlag=""
 frmtype=1
-frmmax=3
+frmmax=4
 samplefile=""
 encoding="UTF-16"
 pythonexec="/usr/local/bin/python3"
@@ -307,6 +307,9 @@ case $frmtype in
         ;;
     3)
         p_script="mapsParser2.py \"$samplefile\""
+        ;;
+    4)
+        p_script="mapsParser3.py \"$samplefile\""
         ;;
     *)
         echo "Format type must be an integer within the range [1, $frmmax]."  >&2 | tee -a $log
