@@ -1,10 +1,10 @@
-#!/usr/loca/bin/python3
+#!/usr/local/bin/python3
 # mapsParser2.py
-# Parsing script for multi-plate spectrophotometer
+# Parsing script for multi-plate spectrophotometer in ROW format
 #
 # Author: Daniel A Cuevas
 # Created on 24 Aug 2015
-# Updated on 14 Apr 2017
+# Updated on 14 Aug 2017
 #
 #
 ###############################################################
@@ -12,6 +12,7 @@
 ###############################################################
 # = Tab delimited file
 # = Each read is a different plate
+# = Reads are written in row format (1 row x 96 columns)
 # = Each file is a different time point
 # === Although, there is a different time point associated with each read
 # = First set of rows are column headers (irrelevant)
@@ -76,7 +77,7 @@ def sortFiles(d, files):
 
     # Create a list of tuples of file name and number
     # [("Data", 1), ("Data", 2),..., ("Data", 10),...]
-    files2 = [(b[0], int(b[1])) for b in [a.split(" ") for a in files]]
+    files2 = [(b[0], int(b[1])) for b in [a.split() for a in files]]
     # Sort by file name then by number
     files2_sorted = sorted(files2, key=itemgetter(0, 1))
     # Recombine and return
@@ -144,7 +145,8 @@ def readData(data, f, t0, samples, sOrder):
                 ll = l.split("\t")
                 # Check that there are 97 items (1 Temp + 96 wells)
                 if len(ll) != 97:
-                    errOut("There are not 97 items in header line " + str(ln))
+                    errOut("There are not 97 items in header line " + str(ln)
+                           + " for file " + f)
                 wells = ll[1:]
                 dataNext = True
 
