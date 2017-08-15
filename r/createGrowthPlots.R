@@ -360,7 +360,8 @@ if (plateFlag) {
                                     "Potassium phosphate",
                                     "DL-Alpha-Glycerophosphate",
                                     "Creatinephosphate",
-                                    "Beta-Glycerophosphate"),
+                                    "Beta-Glycerophosphate",
+                                    "Ammonium Chloride"),
                             newl=c("L-Glutamic\nAcid",
                                     "Potassium\nSorbate",
                                     "Negative\nControl",
@@ -400,7 +401,8 @@ if (plateFlag) {
                                     "Potassium\nPhosphate",
                                     "DL-Alpha-\nGlycerophosphate",
                                     "Creatine\nPhosphate",
-                                    "Beta-\nGlycerophosphate"))
+                                    "Beta-\nGlycerophosphate",
+                                    "Ammonium\nChloride"))
 
     for (i in seq(1, nrow(cmpd.newline))) {
         oldc <- as.character(cmpd.newline$orig[i])
