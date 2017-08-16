@@ -22,7 +22,7 @@ E3	Sulfur	L-Cysteic Acid	0.3
 F3	Sulfur	Isethionic Acid	0.3
 G3	Phosphorus	Blank	0.0
 H3	Phosphorus	D-Glucose-6-Phosphate	0.3
-A4	Nitrogen	L-Methione	0.2
+A4	Nitrogen	L-Methionine	0.2
 B4	Nitrogen	L-Tryptophan	0.2
 C4	Nitrogen	2-Deoxy-D-Ribose	0.3
 D4	Sulfur	Blank	0.0
