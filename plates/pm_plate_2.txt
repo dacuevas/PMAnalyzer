@@ -53,7 +53,7 @@ D7	Sulfur	Blank	0.0
 E7	Sulfur	Acetyl Cysteine	0.3
 F7	Sulfur	DL-Ethionine	0.3
 G7	Phosphorus	Blank	0.0
-H7	Phosphorus	Potassium phosphate	0.3
+H7	Phosphorus	Potassium Phosphate	0.3
 A8	Nitrogen	L-Serine	0.3
 B8	Nitrogen	D-Serine	0.3
 C8	Nitrogen	Blank	0.0
