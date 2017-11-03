@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-# mapsParser3.py
+# mapsParser4.py
 # Parsing script for multi-plate spectrophotometer in ROW format
 #
 # Author: Daniel A Cuevas
