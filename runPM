@@ -132,7 +132,7 @@ verboseFlag=""
 debugFlag=""
 imageFlag=""
 frmtype=1
-frmmax=4
+frmmax=6
 samplefile=""
 pythonexec="/usr/local/bin/python3"
 
@@ -304,6 +304,12 @@ case $frmtype in
         ;;
     4)
         p_script="mapsParser3.py \"$samplefile\""
+        ;;
+    5)
+        p_script="mapsParser4.py"
+        ;;
+    6)
+        p_script="mapsParser5.py"
         ;;
     *)
         echo "Format type must be an integer within the range [1, $frmmax]."  >&2 | tee -a $log
