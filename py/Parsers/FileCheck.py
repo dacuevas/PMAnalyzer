@@ -172,7 +172,7 @@ def checkFormat6(file):
 parser = argparse.ArgumentParser()
 parser.add_argument("indir", help="Directory containing data files")
 parser.add_argument("file_type", help="Number for the file parser to use",
-                    type=int, choices=range(1, 4))
+                    type=int, choices=range(1, 7))
 parser.add_argument("-v", "--verbose", action="store_true",
                     help="Increase output for status messages")
 
