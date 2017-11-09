@@ -36,15 +36,14 @@ Required
    -o [output_name]        : Suffix appended to all output files
 
 Optional
-   --clear                 : Clear out results directory of old files.
+   --clear                 : Clear out results directory of old files
    --debug                 : Print out debug messages
-   -f                      : Flag if filter should be applied to growth curves during PManalysis
-   -g [type]               : Flag to use new growth level calculation. Range: [1, 2]
+   -g [type]               : Flag to use experimental growth level calculation. Range: [1, 2]
    -h, -?, --help          : This help message
    -m                      : Generate figures
    -p [plate_filename]     : Plate filepath
-   --python [file path]    : Use specified Python executable [Default: /usr/local/bin/python3.4]
-   -s [sample_filename]    : Sample name and replicate file [used with -t 3]
+   --python [file path]    : Use specified Python executable [Default: /usr/local/bin/python3]
+   -s [sample_filename]    : Sample name and replicate file [used with -t 3 or 4]
    -t [input_file_type]    : Parser number for input format. Range: [1, $1] [Default: 1]
    -v                      : Verbose output
 
@@ -126,7 +125,6 @@ parserscriptdir=$pyscriptdir/Parsers
 plscriptdir=$(cd $(dirname $0); pwd -P)/pl
 rscriptdir=$(cd $(dirname $0); pwd -P)/r
 scriptname=$(echo $0 | perl -ne '/\/?.*\/(.+)/; print $1;')
-filterflag=""
 growthflag=""
 verboseFlag=""
 debugFlag=""
@@ -160,9 +158,6 @@ while [[ $# != 0 ]]; do
         ;;
     --debug)
         debugFlag="--debug"
-        ;;
-    -f)
-        filterflag="-f"
         ;;
     -g)
         shift
@@ -350,7 +345,7 @@ else
     pflag=""
 fi
 in="$outputdir/${out}"
-cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $pflag $filterflag $growthflag $verboseFlag $debugFlag $imageFlag"
+cmd="$pythonexec ${pyscriptdir}/pmanalysis.py $in $outputdir -o $outputname $pflag $growthflag $verboseFlag $debugFlag $imageFlag"
 getTime && echo "${currtime}    *****Starting modeling script*****"  >&1 | tee -a $log
 [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
 eval $cmd  2>&1 | tee -a $log
