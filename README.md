@@ -6,13 +6,21 @@ PMAnalyzer is a command-line software pipeline that performs bacterial growth cu
 ## *Dependencies*
 #### Languages
 1. Bash
-2. Perl
+2. R
 3. Python 2.7.X+ or 3.X.X
 
-#### Modules/Packages
+#### R Modules/Packages
+1. ggplot2
+2. ggthemes
+3. reshape2
+4. grid
+5. plyr
+
+#### Python Modules/Packages
 1. SciPy
 2. NumPy
 3. Matplotlib (for graphs and figures)
+4. Pandas
 
 ## *Input files*
 The parsing scripts from PMAnalyzer are generated from the Molecular Devices Analyst GT multi-plate plate reader. Sample input files can be viewed in the
