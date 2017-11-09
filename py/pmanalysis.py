@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 03 Apr 2017
+# Updated on 08 Nov 2017
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -168,7 +168,7 @@ parser.add_argument('-i', '--images', action='store_true',
                     help='Generate images and graphs')
 parser.add_argument('-g', '--growth', type=int,
                     choices=[1, 2], metavar="[1, 2]",
-                    help='Use newer growth level calculation')
+                    help='Use alternative growth level calculations')
 
 args = parser.parse_args()
 inputFile = args.infile
@@ -264,8 +264,8 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     # Calculate logistic based on mean values
     log = GrowthCurve.logistic(time, y0, A, mgr, lag)
 
-    if growthFlag == 2:
-        gl = GrowthCurve.calcNewGrowth2(log, A, y0)
+    if growthFlag == 0:
+        gl = GrowthCurve.default_growth(log, A, y0)
     elif growthFlag == 1:
         gl = GrowthCurve.calcNewGrowth(log, A, y0)
     else:

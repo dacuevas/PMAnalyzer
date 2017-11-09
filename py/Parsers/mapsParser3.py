@@ -1,10 +1,10 @@
 #!/usr/local/bin/python3
-# mapsParser2.py
-# Parsing script for multi-plate spectrophotometer in ROW format
+# mapsParser3.py
+# Parsing script for multi-plate spectrophotometer in PLATE format
 #
 # Author: Daniel A Cuevas
-# Created on 24 Aug 2015
-# Updated on 14 Aug 2017
+# Created on 08 Mar 2016
+# Updated on 09 Mar 2016
 #
 #
 ###############################################################
@@ -12,14 +12,15 @@
 ###############################################################
 # = Tab delimited file
 # = Each read is a different plate
-# = Reads are written in row format (1 row x 96 columns)
-# = Each file is a different time point
+# = Reads are written in plate format (8 rows x 12 columns)
+# = Each file is a different plate cycle
 # === Although, there is a different time point associated with each read
 # = First set of rows are column headers (irrelevant)
-# = Next row is well information column headers
-# === E.g., <TAB> Temperature <TAB> A1 <TAB> A2 <TAB>...
-# = Next row is temperature followed by OD reads
+# = Next row is the 12 well information column headers
+# === E.g., <TAB> Temperature <TAB> 1 <TAB> 2 <TAB>...
+# = Next 8 rows is temperature followed by OD reads for row A through H
 # === E.g., <TAB> 27.0 <TAB> 0.07 <TAB> 0.09 <TAB>...
+# ===       <TAB> Blank <TAB> 0.09 <TAB> 0.08 <TAB>...
 # = After reads is a blank line and an "~End" indicator
 # = Finally, there is a text line with the date+timestamp at the end
 # === E.g. ...Date Last Saved: 7/8/2015 5:36:31 PMa
@@ -35,6 +36,7 @@ import sys
 import re
 import datetime as dt
 from operator import itemgetter
+from itertools import product
 
 TIMESTAMP = r"(\d+\/\d+\/\d+\s\d+:\d+:\d+\s[AP]M)"
 
@@ -134,29 +136,36 @@ def parseWell(well):
 
 
 def readData(data, f, t0, samples, sOrder):
-    dataNext = False  # Flag to read in data in next line
-    wells = []
+    data_row = 9  # Will only read data for data row 1 through 8
     sampleIdx = 0
+    od_reads = []
     with open(f, "r") as fh:
-        for ln, l in enumerate(fh):
+        for ln, l in enumerate(fh, start=1):
             # Strip off any blank or newlines on both sides
             l = l.strip()
             if re.match(r"Temperature", l):
                 ll = l.split("\t")
-                # Check that there are 97 items (1 Temp + 96 wells)
-                if len(ll) != 97:
-                    errOut("There are not 97 items in header line " + str(ln)
+                # Check that there are 13 items (1 Temp + 12 columns)
+                if len(ll) != 13:
+                    errOut("There are not 13 items in header line " + str(ln)
                            + " for file " + f)
-                wells = ll[1:]
-                dataNext = True
+                data_row = 1
 
-            elif dataNext:
+            elif data_row <= 8:
                 ll = l.split("\t")
-                # Check that there are 97 items (1 Temp + 96 wells)
-                if len(ll) != 97:
-                    errOut("There are not 97 items in data line " + str(ln))
-                odReads = ll[1:]
-                dataNext = False
+                # Check that there are 12 items (12 columns)
+                # First data row has 13 items -- first item is the temperature
+                if data_row == 1:
+                    if len(ll) != 13:
+                        errOut("There are not 13 items in the first data line "
+                               + str(ln) + " for file " + f)
+                    od_reads.append(ll[1:])
+                elif data_row > 1:
+                    if len(ll) != 12:
+                        errOut("There are not 12 items in data line " + str(ln)
+                               + " for file " + f)
+                    od_reads.append(ll)
+                data_row += 1
 
             elif re.search(TIMESTAMP, l):
                 # Get sample name and rep
@@ -166,8 +175,9 @@ def readData(data, f, t0, samples, sOrder):
                     errOut("Could not extract name and rep in line " + str(ln))
                 # Timestamp signifies end of read
                 timeObj, t0 = parseTime(l, t0, name, rep)
-                data = addOD(data, wells, odReads, timeObj, t0, name, rep)
+                data = addOD(data, od_reads, timeObj, t0, name, rep)
                 sampleIdx += 1
+                od_reads = []
 
 
 def parseTime(line, t0, name, rep):
@@ -184,7 +194,7 @@ def parseTime(line, t0, name, rep):
     return timeObj, t0
 
 
-def addOD(data, wells, odReads, timeObj, t0, name, rep):
+def addOD(data, od_reads, timeObj, t0, name, rep):
     """Store data in Data Frame"""
     # Calculate time difference and convert to hours
     tDelta = timeObj - t0[name][rep]
@@ -192,17 +202,32 @@ def addOD(data, wells, odReads, timeObj, t0, name, rep):
     if tDelta < 0:
         errOut("ERROR: tDelta is negative for " + name + " " + rep)
 
-    for idx, odRead in enumerate(odReads):
-        well = parseWell(wells[idx])
-        # Check if data keys are initialized
-        if name not in data:
-            data[name] = {rep: {well: {tDelta: odRead}}}
-        elif rep not in data[name]:
-            data[name][rep] = {well: {tDelta: odRead}}
-        elif well not in data[name][rep]:
-            data[name][rep][well] = {tDelta: odRead}
-        else:
-            data[name][rep][well][tDelta] = odRead
+    wells = ["{}{}".format(*w) for w in product("ABCDEFGH", range(1, 13))]
+
+    # Iterate through reads to add
+    # First check if od_reads is the correct number of rows
+    if len(od_reads) != 8:
+        errOut("ERROR: od_reads does not contain 8 rows of data. There are"
+               " only " + str(len(od_reads)) + " rows. Name: " + name
+               + " Rep: " + rep)
+    for row_idx, od_row in enumerate(od_reads):
+        # Check that the row contains 12 items of data
+        if len(od_row) != 12:
+            errOut("ERROR: od_row " + str(row_idx) + " does not contain "
+                   "12 columns of data. Only " + str(len(od_reads)) + " cols."
+                   " Name: " + name + " Rep: " + rep)
+        for col_idx, od_read in enumerate(od_row):
+            idx = row_idx * 12 + col_idx
+            well = parseWell(wells[idx])
+            # Check if data keys are initialized
+            if name not in data:
+                data[name] = {rep: {well: {tDelta: od_read}}}
+            elif rep not in data[name]:
+                data[name][rep] = {well: {tDelta: od_read}}
+            elif well not in data[name][rep]:
+                data[name][rep][well] = {tDelta: od_read}
+            else:
+                data[name][rep][well][tDelta] = od_read
     return data
 
 

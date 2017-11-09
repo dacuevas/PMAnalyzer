@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 03 Apr 2017
+# Updated on 08 Nov 2017
 
 
 from __future__ import absolute_import, division, print_function
@@ -16,7 +16,7 @@ from numpy import trapz
 
 class GrowthCurve:
     """Bacteria growth curve class"""
-    def __init__(self, data, sample, rep, well, newGrowth=0):
+    def __init__(self, data, sample, rep, well, growth_version=0):
         # data format
         #   Pandas GroupBy group object
         #   Indices: sample rep well time
@@ -41,16 +41,23 @@ class GrowthCurve:
                                      self.asymptote,
                                      self.maxGrowthRate,
                                      self.lag)
-        if newGrowth == 2:
-            self.growthLevel = calcNewGrowth2(self.dataLogistic,
+        if growth_version == 0:
+            self.growthLevel = default_growth(self.dataLogistic,
                                               self.asymptote,
                                               self.y0)
-        elif newGrowth == 1:
+        elif growth_version == 1:
             self.growthLevel = calcNewGrowth(self.dataLogistic,
                                              self.asymptote,
                                              self.y0)
-        else:
+        elif growth_version == 2:
             self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
+        else:
+            util.printStatus("Unexpected growth version:"
+                             + str(growth_version))
+            util.printStatus("Using default growth calculation instead")
+            self.growthLevel = default_growth(self.dataLogistic,
+                                              self.asymptote,
+                                              self.y0)
         self.glScaled = calcGrowth2(self.dataLogistic, self.asymptote)
         self.expGrowth = calcExpGrowth(self.maxGrowthRate, self.asymptote)
 
@@ -163,7 +170,7 @@ def calcNewGrowth(logistic, asym, y0):
     return len(logistic) / py.sum((1 / (logistic + diff)))
 
 
-def calcNewGrowth2(logistic, asym, y0):
+def default_growth(logistic, asym, y0):
     """
     Calculate growth level using an adjusted harmonic mean
     using a logistic model, its asymptote, and its starting OD value

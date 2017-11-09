@@ -1,10 +1,28 @@
 #!/usr/local/bin/python3
-# mapsParser1.py
-# Parsing script for GT Analyst multi-plate spectrophotometer
+# mapsParser4.py
+# Parsing script for multi-plate spectrophotometer in ROW format
 #
 # Author: Daniel A Cuevas
-# Created on 13 Apr 2015
-# Updated on 14 Aug 2017
+# Created on 11 Nov 2017
+# Updated on 11 Nov 2017
+#
+#
+###############################################################
+#                       ASSUMPTIONS
+###############################################################
+# = Tab delimited file, spreadsheet format
+# = File is for a single plate
+# = First two rows are machine-generated information
+# = Third row are column headers, a total of 98 columns with 98 tabs
+# === Time <TAB> Temperature <TAB> A1 <TAB> A2 <TAB> ... <H12> <TAB> <NEWLINE>
+# = Remaining rows are data values for columns
+# = Time format: D.HH:MM:SS
+# === Regex for time format is (\d\.)?\d{2}:\d{2}:\d{2}
+# === Days and period are optional
+# = After reads is a blank line and an "~End" indicator
+# = Finally, there is a text line with the date+timestamp at the end (not used)
+# === E.g. ...Date Last Saved: 7/8/2015 5:36:31 PM
+###############################################################
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -13,6 +31,9 @@ import sys
 import re
 import datetime as dt
 from operator import itemgetter
+from itertools import product
+
+TIMESTAMP = re.compile(r"((\d)\.)?(\d{2}:\d{2}:\d{2})")
 
 
 ###############################################################################
@@ -45,7 +66,7 @@ def readPlate(mypath):
     plate = {}
     with open(mypath, "r") as fh:
         for l in fh:
-            l = l.rstrip()
+            l = l.rstrip("\n")
             # Order of elements are:
             #   1) well
             #   2) mainsource
@@ -77,58 +98,75 @@ def readData(data, f, t0):
                "{}".format(f))
     name, rep = m.group(1, 2)
 
-    # Be sure to ignore the BACKGROUND data points in the file
-    inBackground = False
+    data_rows = False  # Flag when to read data
     with open(f, "r") as fh:
-        for l in fh:
-            l = l.rstrip()
-            if re.match(r"BACKGROUND", l):
-                # Check for background data - this always comes after raw data
-                inBackground = True
+        for ln, l in enumerate(fh, start=1):
+            # Strip off any blank or newlines on both sides
+            l = l.strip()
 
-            elif re.match(r"\d.*?\s.{11}\s+", l):
-                # No longer in background data
-                inBackground = False
-                timeObj, t0 = parseTime(l, t0, name, rep)
+            # Check if we reached the end of the file
+            if data_rows and len(l) == 0:
+                break
 
-            elif not inBackground and re.match(r"\w+\s+[0-9.]+", l):
-                # Extract well and data
-                data = parseOD(l, data, t0, timeObj, name, rep)
+            elif re.match(r"Time", l):
+                ll = l.split("\t")
+                # Check that there are 98 items (1 Time, 1 Temp, 96 wells)
+                if len(ll) != 98:
+                    errOut("There are not 98 items in header line " + str(ln)
+                           + " for file " + f)
+                data_rows = True
+
+            elif data_rows:
+                ll = l.split("\t")
+                # Check that there are 98 items
+                if len(ll) != 98:
+                    errOut("There are not 98 items in data line " + str(ln)
+                           + " for file " + f)
+                timeObj, t0 = parseTime(ll[0], t0, name, rep)
+                data = addOD(ll[2:], data, timeObj, t0, name, rep)
 
 
-def parseTime(line, t0, name, rep):
+
+def parseTime(time_str, t0, name, rep):
     """Parse time from a string and return the datetime object"""
-    m = re.match(r"(\d+\/\d+\/\d+\s\d+:\d+:\d+\s[AP]M)\s+", line)
-    timeRaw = m.group(1)
-    timeObj = dt.datetime.strptime(timeRaw, "%m/%d/%Y %I:%M:%S %p")
+    m = TIMESTAMP.match(time_str)
+    #timeRaw = ":".join(list(m.group(2, 3, 4)))
+    timeRaw = m.group(3)
+    timeObj = dt.datetime.strptime(timeRaw, "%H:%M:%S")
+    # Check if there was a day present
+    if m.group(2):
+        timeObj += dt.timedelta(days=int(m.group(2)))
 
     # Check if this is the first time for the sample or replicate
-    if name not in t0 or rep not in t0[name]:
-        # Store starting time
+    if name not in t0:
         t0[name] = {rep: timeObj}
+    elif rep not in t0[name]:
+        t0[name][rep] = timeObj
     return timeObj, t0
 
 
-def parseOD(line, data, t0, timeObj, name, rep):
-    """Parse data from a string and store in Data Frame"""
-    # Extract well and data
-    m = re.match(r"(\w+)\s+([0-9.]+)", line)
-    well, odRead = m.group(1, 2)
-    well = parseWell(well)
-
+def addOD(od_reads, data, timeObj, t0, name, rep):
+    """Store data in Data Frame"""
     # Calculate time difference and convert to hours
     tDelta = timeObj - t0[name][rep]
     tDelta = tDelta.days * 24 + tDelta.seconds / 3600
+    if tDelta < 0:
+        errOut("ERROR: tDelta is negative for " + name + " " + rep)
 
-    # Check if data keys are initialized
-    if name not in data:
-        data[name] = {rep: {well: {tDelta: odRead}}}
-    elif rep not in data[name]:
-        data[name][rep] = {well: {tDelta: odRead}}
-    elif well not in data[name][rep]:
-        data[name][rep][well] = {tDelta: odRead}
-    else:
-        data[name][rep][well][tDelta] = odRead
+    wells = ["{}{}".format(*w) for w in product("ABCDEFGH", range(1, 13))]
+
+    # Iterate through reads to add
+    for idx, od_read in enumerate(od_reads):
+        well = parseWell(wells[idx])
+        # Check if data keys are initialized
+        if name not in data:
+            data[name] = {rep: {well: {tDelta: od_read}}}
+        elif rep not in data[name]:
+            data[name][rep] = {well: {tDelta: od_read}}
+        elif well not in data[name][rep]:
+            data[name][rep][well] = {tDelta: od_read}
+        else:
+            data[name][rep][well][tDelta] = od_read
     return data
 
 
@@ -169,17 +207,14 @@ def printData(data, plate=None, pn=None):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("indir", help="Directory containing data files")
-parser.add_argument("-o", "--outsuffix",
-                    help="Suffix appended to output files. Default is 'out'")
 parser.add_argument("-p", "--plate", help="Plate file for wells")
 parser.add_argument("-v", "--verbose", action="store_true",
                     help="Increase output for status messages")
 
 args = parser.parse_args()
 inDir = args.indir
-outSuffix = args.outsuffix if args.outsuffix else "out"
-verbose = args.verbose
 plateFile = args.plate
+verbose = args.verbose
 
 
 ###############################################################################

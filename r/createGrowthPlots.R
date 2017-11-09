@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 07 May 2015
-# Updated on 14 Apr 2017
+# Updated on 19 Jun 2017
 
 
 # Import necessary packages
@@ -129,11 +129,11 @@ makeFigure <- function(plot.data, plot.err, plateFlag, title, color.by, x.lo, x.
         pl <- pl + geom_ribbon(aes(ymin=od-se, ymax=od+se, linetype=NA),
                                  fill="#1F77B4", alpha=0.5) +
             geom_line(size=0.8, alpha=0.5, colour="#1F77B4") +
-            geom_point(size=1.5, colour="#1F77B4")
+            geom_point(size=1.0, colour="#1F77B4")
     }
     else {
         pl <- pl + geom_line(size=0.8, alpha=0.5) +
-            geom_point(size=1.5, alpha=0.5)
+            geom_point(size=1.0, alpha=0.5)
     }
 
     # Apply theme aesthetics
@@ -360,7 +360,8 @@ if (plateFlag) {
                                     "Potassium phosphate",
                                     "DL-Alpha-Glycerophosphate",
                                     "Creatinephosphate",
-                                    "Beta-Glycerophosphate"),
+                                    "Beta-Glycerophosphate",
+                                    "Ammonium Chloride"),
                             newl=c("L-Glutamic\nAcid",
                                     "Potassium\nSorbate",
                                     "Negative\nControl",
@@ -400,7 +401,8 @@ if (plateFlag) {
                                     "Potassium\nPhosphate",
                                     "DL-Alpha-\nGlycerophosphate",
                                     "Creatine\nPhosphate",
-                                    "Beta-\nGlycerophosphate"))
+                                    "Beta-\nGlycerophosphate",
+                                    "Ammonium\nChloride"))
 
     for (i in seq(1, nrow(cmpd.newline))) {
         oldc <- as.character(cmpd.newline$orig[i])

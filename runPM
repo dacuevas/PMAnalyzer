@@ -4,9 +4,9 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 03 Jan 2017
+# Updated on 08 Nov 2017
 
-VERSION="2.3"
+VERSION="2.4"
 
 printversion() {
     echo "
@@ -38,7 +38,6 @@ Required
 Optional
    --clear                 : Clear out results directory of old files.
    --debug                 : Print out debug messages
-   -e [encoding]           : Check for file encoding of original data [Default: UTF-16]
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -g [type]               : Flag to use new growth level calculation. Range: [1, 2]
    -h, -?, --help          : This help message
@@ -133,10 +132,9 @@ verboseFlag=""
 debugFlag=""
 imageFlag=""
 frmtype=1
-frmmax=3
+frmmax=6
 samplefile=""
-encoding="UTF-16"
-pythonexec="/usr/local/bin/python3.4"
+pythonexec="/usr/local/bin/python3"
 
 # Set pipefail for catching errors in piped commands
 set -o pipefail
@@ -162,11 +160,6 @@ while [[ $# != 0 ]]; do
         ;;
     --debug)
         debugFlag="--debug"
-        ;;
-    -e)
-        shift
-        [[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -d value" >&2 && usage $frmmax && exit 2
-        encoding=$1
         ;;
     -f)
         filterflag="-f"
@@ -278,6 +271,7 @@ for f in ${inputfile[@]}; do
     enc=$(file --mime "$inputfiledir/$f" | egrep -ic "utf-8|us-ascii")
     if [[ $enc -eq 0 ]]; then
         f=$(echo "$f" | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
+        encoding=$(file --mime "$inputfiledir/$f" | perl -ne '/charset=(.*)/; print $1')
         cmd="iconv -f $encoding -t UTF-8 \"$inputfiledir/$f\" > tmp.txt && mv tmp.txt \"$inputfiledir/$f\""
         [[ $verbose ]] && getTime && echo "${currtime}    Executing $cmd"  >&1 | tee -a $log
         eval $cmd  2>&1 | tee -a $log
@@ -307,6 +301,15 @@ case $frmtype in
         ;;
     3)
         p_script="mapsParser2.py \"$samplefile\""
+        ;;
+    4)
+        p_script="mapsParser3.py \"$samplefile\""
+        ;;
+    5)
+        p_script="mapsParser4.py"
+        ;;
+    6)
+        p_script="mapsParser5.py"
         ;;
     *)
         echo "Format type must be an integer within the range [1, $frmmax]."  >&2 | tee -a $log
