@@ -4,9 +4,9 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 03 Nov 2017
+# Updated on 08 Nov 2017
 
-VERSION="2.3"
+VERSION="2.4"
 
 printversion() {
     echo "
