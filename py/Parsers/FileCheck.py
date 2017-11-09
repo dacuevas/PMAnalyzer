@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 27 Dec 2016
-# Updated on 27 Dec 2016
+# Updated on 09 Nov 2017
 
 from __future__ import absolute_import, print_function
 import argparse
@@ -148,6 +148,24 @@ def checkFormat3(file):
     pass
 
 
+def checkFormat4(file):
+    """Check formatting of text in file format 4: mapsParser3.py"""
+    # Implementation coming soon
+    pass
+
+
+def checkFormat5(file):
+    """Check formatting of text in file format 5: mapsParser4.py"""
+    # Implementation coming soon
+    pass
+
+
+def checkFormat6(file):
+    """Check formatting of text in file format 6: mapsParser5.py"""
+    # Implementation coming soon
+    pass
+
+
 ###############################################################################
 # Argument parsing
 ###############################################################################
@@ -181,3 +199,9 @@ for f in filenames:
         checkFormat2(f)
     elif fileType == 3:
         checkFormat3(f)
+    elif fileType == 4:
+        checkFormat4(f)
+    elif fileType == 5:
+        checkFormat5(f)
+    elif fileType == 6:
+        checkFormat6(f)
