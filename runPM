@@ -43,7 +43,7 @@ Optional
    -m                      : Generate figures
    -p [plate_filename]     : Plate filepath
    --python [file path]    : Use specified Python executable [Default: /usr/local/bin/python3]
-   -s [sample_filename]    : Sample name and replicate file [used with -t 3]
+   -s [sample_filename]    : Sample name and replicate file [used with -t 3 or 4]
    -t [input_file_type]    : Parser number for input format. Range: [1, $1] [Default: 1]
    -v                      : Verbose output
 

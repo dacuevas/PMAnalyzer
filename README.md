@@ -69,18 +69,14 @@ takes precedence)
 Optional
    --clear                 : Clear out results directory of old files
    --debug                 : Print out debug messages
-   -f                      : Flag if filter should be applied to growth curves
-during PManalysis
-   -g                      : Flag to use new growth level calculation
+   -g                      : Flag to use experimental growth level calculation. Range: [1, 2]
    -h, -?, --help          : This help message
    -m                      : Generate figures
-   -n [number of plates]   : Number of plates [used with some parsers]
    -p [plate_filename]     : Plate filepath
    --python [file path]    : Use specified Python executable [Default:
 /usr/local/bin/python3]
-   -s [sample_filename]    : Sample name and replicate file [used with some
-parsers]
-   -t [input_file_type]    : Format number of PM plate format. Range: [1, 2]
+   -s [sample_filename]    : Sample name and replicate file [used with -t 3 or 4]
+   -t [input_file_type]    : Format number of PM plate format. Range: [1, 6] [Default: 1]
    -v                      : Verbose output
 ```
 
