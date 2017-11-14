@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov 2013
-# Updated on 08 Nov 2017
+# Updated on 14 Nov 2017
 
 
 from __future__ import absolute_import, division, print_function
@@ -51,6 +51,11 @@ class GrowthCurve:
                                              self.y0)
         elif growth_version == 2:
             self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
+        elif growth_version == 3:
+            self.growthLevel = calcGrowthScore(self.asymptote,
+                                               self.y0,
+                                               self.maxGrowthRate,
+                                               self.lag)
         else:
             util.printStatus("Unexpected growth version:"
                              + str(growth_version))
@@ -78,12 +83,20 @@ class GrowthCurve:
         # y0[1] = A
         # y0[2] = MGR
         # y0[3] = lag (set at 0.01)
-        a_ub = y0[1] + (y0[0] / 2)  # A bounded by estimated A plus half
+        a_ub = y0[1] + (y0[1] / 2)  # A bounded by estimated A plus half
         mgr_ub = y0[2] + (y0[2] * 0.10)  # MGR bounded by 110% estimated MGR
         lag_ub = t[-1]  # Lag bounded by final time
+
+        # Check if start OD is higher than average curve
+        # This happens when the curve starts off with very high OD reads
+        avg_curve = py.mean(raw)
+        if y0[0] > avg_curve:
+            tmp = list(y0)
+            tmp[0] = avg_curve / 2
+            y0 = tuple(tmp)
         try:
             results = optimize.minimize(self.__logisticSSE, y0, args=(t, raw),
-                                        bounds=((0, None),
+                                        bounds=((0.001, avg_curve),
                                                 (0.001, a_ub),
                                                 (0, mgr_ub),
                                                 (0, lag_ub)),
@@ -109,6 +122,43 @@ class GrowthCurve:
                              "({:.3f}). Setting to MGR to  A / 1hr".format(
                              results.x[2], results.x[1]))
             results.x[2] = results.x[1]
+
+        # Check starting OD again
+        # If starting OD is higher than the asymptote, refit the curve
+        # by using the asymptote as the upper bound of the starting OD
+        # and setting the initial value of start OD to half of the asymptote
+        if results.x[0] > results.x[1]:
+            results.x[0] = results.x[1] / 2
+            try:
+                results = optimize.minimize(self.__logisticSSE, results.x,
+                                            args=(t, raw),
+                                            bounds=((0.001, results.x[0]),
+                                                    (0.001, a_ub),
+                                                    (0, mgr_ub),
+                                                    (0, lag_ub)),
+                                            method="L-BFGS-B")
+            except RuntimeError as e:
+                util.printStatus(e)
+                util.printStatus(self.rawcurve)
+                util.exitScript()
+
+            if not results.success:
+                util.printStatus("*" * 55)
+                util.printStatus("CurveFit Unsuccessful")
+                util.printStatus(results.message)
+                util.printStatus("*" * 55)
+
+            # Check if max growth rate is reasonable compared to asymptote
+            # Curve should not be able to reach asymptote in less than 0.1 hrs
+            # max growth rate * 0.1 should not be > A
+            if results.x[2] * 0.1 > results.x[1]:
+                # If this is true, set max growth rate to A / 1hr
+                util.printStatus("{}\t{}\t{}".format(sample, rep, well))
+                util.printStatus(
+                    "Max growth rate ({:.3f}) * 0.1hr > Asymptote "
+                    "({:.3f}). Setting to MGR to  A / 1hr".format(
+                        results.x[2], results.x[1]))
+                results.x[2] = results.x[1]
 
         return results.x
 
@@ -178,6 +228,21 @@ def default_growth(logistic, asym, y0):
     amplitude = asym - y0
     diff = logistic - y0
     return len(logistic) / py.sum((1 / (amplitude + diff)))
+
+
+def calcGrowthScore(asym, mgr):
+    """
+    Calculate growth score using the fitted parameters of the growth curve
+    :param asym:
+    :param y0:
+    :param mgr:
+    :param lag:
+    :return:
+    """
+    growth = asym + mgr * 0.25
+    #penalty = py.amax([1.0, lag])
+    #return growth / penalty
+    return growth
 
 
 def calcGrowth2(logistic, asym):
