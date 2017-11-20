@@ -53,9 +53,7 @@ class GrowthCurve:
             self.growthLevel = calcGrowth(self.dataLogistic, self.asymptote)
         elif growth_version == 3:
             self.growthLevel = calcGrowthScore(self.asymptote,
-                                               self.y0,
-                                               self.maxGrowthRate,
-                                               self.lag)
+                                               self.maxGrowthRate)
         else:
             util.printStatus("Unexpected growth version:"
                              + str(growth_version))
@@ -108,6 +106,9 @@ class GrowthCurve:
 
         if not results.success:
             util.printStatus("*" * 55)
+            util.printStatus("sample: " + sample +
+                             ", rep: " + rep +
+                             ", well: " + well)
             util.printStatus("CurveFit Unsuccessful")
             util.printStatus(results.message)
             util.printStatus("*" * 55)
@@ -144,6 +145,9 @@ class GrowthCurve:
 
             if not results.success:
                 util.printStatus("*" * 55)
+                util.printStatus("sample: " + sample +
+                                 ", rep: " + rep +
+                                 ", well: " + well)
                 util.printStatus("CurveFit Unsuccessful")
                 util.printStatus(results.message)
                 util.printStatus("*" * 55)

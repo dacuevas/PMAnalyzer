@@ -271,7 +271,7 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
     elif growthFlag == 2:
         gl = GrowthCurve.calcGrowth(log, A)
     else:
-        gl = GrowthCurve.calcGrowthScore(A, y0, mgr, lag)
+        gl = GrowthCurve.calcGrowthScore(A, mgr)
     glScaled = GrowthCurve.calcGrowth2(log, A)
     r = GrowthCurve.calcExpGrowth(mgr, A)
     try:
