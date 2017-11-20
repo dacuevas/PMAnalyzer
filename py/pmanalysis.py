@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov 2013
-# Updated on 08 Nov 2017
+# Updated on 14 Nov 2017
 
 from __future__ import absolute_import, division, print_function
 import argparse
@@ -167,7 +167,7 @@ parser.add_argument('-p', '--plate', action='store_true',
 parser.add_argument('-i', '--images', action='store_true',
                     help='Generate images and graphs')
 parser.add_argument('-g', '--growth', type=int,
-                    choices=[1, 2], metavar="[1, 2]",
+                    choices=[1, 3], metavar="[1, 3]",
                     help='Use alternative growth level calculations')
 
 args = parser.parse_args()
@@ -268,8 +268,10 @@ for name, group in dataLogistic["od"].groupby(level=["sample", "well"]):
         gl = GrowthCurve.default_growth(log, A, y0)
     elif growthFlag == 1:
         gl = GrowthCurve.calcNewGrowth(log, A, y0)
-    else:
+    elif growthFlag == 2:
         gl = GrowthCurve.calcGrowth(log, A)
+    else:
+        gl = GrowthCurve.calcGrowthScore(A, mgr)
     glScaled = GrowthCurve.calcGrowth2(log, A)
     r = GrowthCurve.calcExpGrowth(mgr, A)
     try:
@@ -375,6 +377,7 @@ col = plateCol + ["time", "od"]
 curvesToPrint.to_csv(
     "{}/logistic_curves_mean_{}.txt".format(outDir, outSuffix),
     sep="\t", header=True, index=True, float_format="%.3f", columns=col)
+
 
 util.printStatus('Output files complete')
 util.printStatus('Analysis complete.')
